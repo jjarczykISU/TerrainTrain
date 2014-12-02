@@ -102,7 +102,7 @@ public class AccumulatedCostAnalysis {
 	            accumulatedCellCost = 0;
 	        }
 	        else {
-	        	// Accumulated Cost = accumulated cost of neighbor + discrete cost of cell + cost to traverse cell
+	        	// Accumulated Cost = (accumulated cost of neighbor + cost of traversing a cell) + discrete cost of cell
 	        	accumulatedCellCost = eval.getFirst() + discreteCost[evalCoor.getFirst()][evalCoor.getSecond()] + costDistance;
 	        }
 	        
@@ -116,42 +116,42 @@ public class AccumulatedCostAnalysis {
 	        // add neighbor coordinate the accumulated cost of the current cell to toEvalute if that cell does not have the status of 2 yet
 	        // add down
 	        if(evalCoor.getSecond() + 1 < height && status[evalCoor.getFirst()][evalCoor.getSecond() + 1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst(), evalCoor.getSecond() + 1);
+	            toEvaluate.add(accumulatedCellCost + costDistance, evalCoor.getFirst(), evalCoor.getSecond() + 1);
 	            status[evalCoor.getFirst()][evalCoor.getSecond() +  1] = DISCOVERED;
 	        }
 	        // add up
 	        if(evalCoor.getSecond() - 1 >= 0 && status[evalCoor.getFirst()][evalCoor.getSecond() -  1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst(), evalCoor.getSecond() - 1);
+	            toEvaluate.add(accumulatedCellCost + costDistance, evalCoor.getFirst(), evalCoor.getSecond() - 1);
 	            status[evalCoor.getFirst()][evalCoor.getSecond() -  1] = DISCOVERED;
 	        }
 	        // add right
 	        if(evalCoor.getFirst() + 1 < width && status[evalCoor.getFirst() + 1][evalCoor.getSecond()] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() + 1, evalCoor.getSecond());
+	            toEvaluate.add(accumulatedCellCost + costDistance, evalCoor.getFirst() + 1, evalCoor.getSecond());
 	            status[evalCoor.getFirst() + 1][evalCoor.getSecond()] = DISCOVERED;
 	        }
 	        // add left
 	        if(evalCoor.getFirst() - 1 >= 0 && status[evalCoor.getFirst() - 1][evalCoor.getSecond()] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() -  1, evalCoor.getSecond());
+	            toEvaluate.add(accumulatedCellCost + costDistance, evalCoor.getFirst() -  1, evalCoor.getSecond());
 	            status[evalCoor.getFirst() - 1][evalCoor.getSecond()] = DISCOVERED;
 	        }
 	        // add right-up
 	        if((evalCoor.getFirst() + 1 < width && evalCoor.getSecond() - 1 >= 0) && status[evalCoor.getFirst() + 1][evalCoor.getSecond() -  1] != EVALUATED) {
-	        	toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() + 1, evalCoor.getSecond() - 1);
+	        	toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), evalCoor.getFirst() + 1, evalCoor.getSecond() - 1);
 	            status[evalCoor.getFirst() + 1][evalCoor.getSecond() -  1] = DISCOVERED;
 	        }
 	        // add left-up
 	        if((evalCoor.getFirst() - 1 >= 0 && evalCoor.getSecond() - 1 >= 0)&& status[evalCoor.getFirst() - 1][evalCoor.getSecond() -  1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() - 1, evalCoor.getSecond() - 1);
+	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), evalCoor.getFirst() - 1, evalCoor.getSecond() - 1);
 	            status[evalCoor.getFirst() - 1][evalCoor.getSecond() -  1] = DISCOVERED;
 	        }
 	        //add right-down
 	        if((evalCoor.getFirst() + 1 < width && evalCoor.getSecond() + 1 < height) && status[evalCoor.getFirst() + 1][evalCoor.getSecond() + 1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() + 1, evalCoor.getSecond() + 1);
+	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), evalCoor.getFirst() + 1, evalCoor.getSecond() + 1);
 	            status[evalCoor.getFirst() + 1][evalCoor.getSecond() + 1] = DISCOVERED;
 	        }
 	        //add left-down
 	        if((evalCoor.getFirst() - 1 >= 0 && evalCoor.getSecond() + 1 < height) && status[evalCoor.getFirst() - 1][evalCoor.getSecond() + 1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() -  1, evalCoor.getSecond() + 1);
+	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), evalCoor.getFirst() -  1, evalCoor.getSecond() + 1);
 	            status[evalCoor.getFirst() - 1][evalCoor.getSecond() + 1] = DISCOVERED;
 	        }
 	    }
