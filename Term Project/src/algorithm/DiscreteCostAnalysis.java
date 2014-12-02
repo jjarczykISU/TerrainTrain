@@ -47,7 +47,9 @@ public class DiscreteCostAnalysis {
 		int[][] discreteCost = new int[width][height]; 
 		for(int i = 0; i < width; i ++) {
 			for(int j = 0; j < height; j ++) {
-				discreteCost[i][j] = 1*layerCosts.get(0)[i][j] + 2*layerCosts.get(1)[i][j];	
+				if(layerCosts.get(1)[i][j] != 0) // if there is water
+					discreteCost[i][j] = layerCosts.get(1)[i][j];
+				else discreteCost[i][j] = layerCosts.get(0)[i][j];	
 			}
 		}
 		
@@ -67,8 +69,8 @@ public class DiscreteCostAnalysis {
 		
 		for(int i = 0; i < cost.length; i ++) {
 			for(int j = 0; j < cost[0].length; j ++) {
-				if(waterLater[i][j] != 0) cost[i][j] = 9;
-				else cost[i][j] = 1;
+				if(waterLater[i][j] != 0) cost[i][j] = waterLater[i][j]*9/255;
+				else cost[i][j] = 0;
 			}
 		}
 		
