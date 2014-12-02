@@ -17,7 +17,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
 
 import algorithm.MapAnalysis;
 import algorithm.MapUtil.Pair;
@@ -155,12 +154,12 @@ public class TrainTerrain {
 					} else {
 						
 						List<int[][]> layers = new ArrayList<int[][]>();
-						layers.add(invertGraph(altitudeLayer)); //TODO adjust accordingly once input specification is decided
+						layers.add(invertGraph(altitudeLayer));
 						if(waterLayer == null) {
 							int[][] defaultWater = new int[altitudeLayer.length][altitudeLayer[0].length];
 							layers.add(defaultWater);
 						} else{
-							layers.add(invertGraph(waterLayer)); //TODO adjust accordingly once input specification is decided
+							layers.add(invertGraph(waterLayer));
 						}
 						
 						// Set source
@@ -212,19 +211,25 @@ public class TrainTerrain {
 			return inverted;
 		}
 		
-		private BufferedImage discreteCostMapToBufferedImage(int[][] discreteCost) {
+		private BufferedImage discreteCostMapToBufferedImage(double[][] discreteCost) {
 			int[][] modifiedMap = new int[discreteCost.length][discreteCost[0].length];
+			double max = 1;
 			for(int i = 0; i < discreteCost.length; i++) {
 				for(int j = 0; j < discreteCost[0].length; j++) {
-					modifiedMap[i][j] = discreteCost[i][j] * 28;
+					if(discreteCost[i][j] > max) max = discreteCost[i][j]; 
+				}
+			}
+			for(int i = 0; i < discreteCost.length; i++) {
+				for(int j = 0; j < discreteCost[0].length; j++) {
+					modifiedMap[i][j] = (int)(discreteCost[i][j] * 255/max);
 				}
 			}
 			return (BufferedImage) FileUtil.mapToImage(modifiedMap);
 		}
 		
-		private BufferedImage accumulatedCostMapToBufferedImage(int[][] accumulatedCost) {
+		private BufferedImage accumulatedCostMapToBufferedImage(double[][] accumulatedCost) {
 			int[][] modifiedMap = new int[accumulatedCost.length][accumulatedCost[0].length];
-			int max = 1;
+			double max = 1;
 			for(int i = 0; i < accumulatedCost.length; i++) {
 				for(int j = 0; j < accumulatedCost[0].length; j++) {
 					if(accumulatedCost[i][j] > max) max = accumulatedCost[i][j]; 
@@ -232,7 +237,7 @@ public class TrainTerrain {
 			}
 			for(int i = 0; i < modifiedMap.length; i++) {
 				for(int j = 0; j < modifiedMap[0].length; j++) {
-					modifiedMap[i][j] = (int)(accumulatedCost[i][j]*255.0/max);
+					modifiedMap[i][j] = (int)(accumulatedCost[i][j]*255/max);
 				}
 			}
 			return (BufferedImage) FileUtil.mapToImage(modifiedMap);

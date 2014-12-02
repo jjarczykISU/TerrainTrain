@@ -1,24 +1,15 @@
 package algorithm;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
 import algorithm.MapUtil.Pair;
-import fileUtils.FileUtil;
 
 public class MapAnalysis {	
 	// Cost to traverse a cell 
 	private int COSTDISTANCE = 1;
 	
-	public int[][] discreteCost;
-	public int[][] accumulatedCost;
+	public double[][] discreteCost;
+	public double[][] accumulatedCost;
 	public int[][] path;
 	
 	public MapAnalysis(int[][] source, List<int[][]> layers, Pair<Integer, Integer> destination) {	
@@ -33,17 +24,17 @@ public class MapAnalysis {
 		
 	}
 	
-	private static int[][] steepestCostPath(int x, int y, int[][] accumulatedCost) {
+	private static int[][] steepestCostPath(int x, int y, double[][] accumulatedCost) {
 		int width = accumulatedCost.length;
 		int height = accumulatedCost[0].length;
 		int[][] path = new int[width][height];
 		
-		int currValue = accumulatedCost[x][y];
+		double currValue = accumulatedCost[x][y];
 		path[x][y] = 1;
 		
 		while(currValue != 0) {
 			Pair<Integer, Integer> nextCell = null;
-			int smallestValue = -1;
+			double smallestValue = currValue;
 			// Down
 			if(y + 1 < accumulatedCost[0].length && path[x][y + 1] != 1) {
 				if(smallestValue == -1 || accumulatedCost[x][y + 1] < smallestValue) {

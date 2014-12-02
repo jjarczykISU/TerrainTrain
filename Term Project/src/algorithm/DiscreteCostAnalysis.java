@@ -10,7 +10,7 @@ public class DiscreteCostAnalysis {
 	 * @param layers list of 2D arrays whether the first array is the altitude map and the second is the water body map
 	 * @throws IllegalArgumentException if arguments are null or if dimensions of layers are 0 or do not match
 	 */
-	public static int[][] generateDiscreteCostMap(List<int[][]> layers) {
+	public static double[][] generateDiscreteCostMap(List<int[][]> layers) {
 		
 		// Check that arguments are valid
 		if(layers == null) {
@@ -40,14 +40,15 @@ public class DiscreteCostAnalysis {
 		// Second layer is interpreted as water bodies
 		layerCosts.add(waterLaterCost(layers.get(1)));
 		
-		//TODO create a weighting map that will be used later??		
+		//TODO create a table for weightings?
+		//TODO add more layer logic
 		
 		// Using weightings to combine map layers into discreteCost map
 		
-		int[][] discreteCost = new int[width][height]; 
+		double[][] discreteCost = new double[width][height]; 
 		for(int i = 0; i < width; i ++) {
 			for(int j = 0; j < height; j ++) {
-				if(layerCosts.get(1)[i][j] != 0) // if there is water
+				if(layerCosts.get(1)[i][j] != 0) // if there is water and requires a bridge
 					discreteCost[i][j] = layerCosts.get(1)[i][j];
 				else discreteCost[i][j] = layerCosts.get(0)[i][j];	
 			}

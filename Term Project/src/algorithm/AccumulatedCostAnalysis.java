@@ -9,18 +9,18 @@ public class AccumulatedCostAnalysis {
 	private static class SortedCellList
 	{
 		//TODO replace with more efficient data structure, such as a self-balancing tree
-	    ArrayList<Pair<Integer, Pair<Integer,Integer>>> list;
+	    ArrayList<Pair<Double, Pair<Integer,Integer>>> list;
 	    public SortedCellList()
 	    {
-	        list = new ArrayList<Pair<Integer, Pair<Integer,Integer>>>();
+	        list = new ArrayList<Pair<Double, Pair<Integer,Integer>>>();
 	    }
 	    
 	    /// Adds cell to list while keeping sorted ordering  
-	    public void add(int value, int xLoc, int yLoc)
+	    public void add(double value, int xLoc, int yLoc)
 	    {
 	        add(value, new Pair<Integer, Integer>(xLoc, yLoc));
 	    }
-	    public void add(int value, Pair<Integer, Integer> loc)
+	    public void add(double value, Pair<Integer, Integer> loc)
 	    {
 	        // insert into list keeping sorted order
 	        int targetIndex = list.size();
@@ -31,11 +31,11 @@ public class AccumulatedCostAnalysis {
 	            }
 	        }
 	        
-	        Pair<Integer, Pair<Integer,Integer>> toAdd = new Pair<Integer, Pair<Integer,Integer>>(value, loc);
+	        Pair<Double, Pair<Integer,Integer>> toAdd = new Pair<Double, Pair<Integer,Integer>>(value, loc);
 	        list.add(targetIndex, toAdd);
 	    }
 	    
-	    public Pair<Integer, Pair<Integer, Integer>> removeFirst()
+	    public Pair<Double, Pair<Integer, Integer>> removeFirst()
 	    {
 	        if(isEmpty()) return null;
 	        return list.remove(0);
@@ -55,7 +55,7 @@ public class AccumulatedCostAnalysis {
 	 * @returns 2D array representation of accumulated cost map
 	 * @throws IllegalArgumentException if arguments are null or the dimensions of discreteCost and source are not the same (assumes that all columns have the same length) or dimensions are 0
 	 */ 
-	public static int[][] generateAccumulatedCostMap( int[][] source, int[][] discreteCost, int costDistance)
+	public static double[][] generateAccumulatedCostMap( int[][] source, double[][] discreteCost, int costDistance)
 	{
 		if(discreteCost == null || source == null) {
 			throw new IllegalArgumentException("Null arguments.");
@@ -71,6 +71,8 @@ public class AccumulatedCostAnalysis {
 	    //      0 means that the cell hasn't been added to toEvaluate yet
 	    //      1 means that the cell has been added to toEvaluate but hasn't been evaluated yet
 	    //      2 means that the cell has been evaluated
+	    int DISCOVERED = 1;
+	    int EVALUATED = 2;
 	    int[][] status = new int[width][height];
 	   
 	    SortedCellList toEvaluate = new SortedCellList();
@@ -84,23 +86,23 @@ public class AccumulatedCostAnalysis {
 	        }
 	    }
 	    
-	    int[][] accumulatedCost = new int[width][height];
+	    double[][] accumulatedCost = new double[width][height];
 	    
 	    while(!toEvaluate.isEmpty()) {
-	    	Pair<Integer, Pair<Integer, Integer>> eval = toEvaluate.removeFirst();
+	    	Pair<Double, Pair<Integer, Integer>> eval = toEvaluate.removeFirst();
 	        Pair<Integer, Integer> evalCoor = eval.getSecond();
 	        
 	        // Check that this cell has not been evaluated yet
-	        if(status[evalCoor.getFirst()][evalCoor.getSecond()] == 2) continue;
+	        if(status[evalCoor.getFirst()][evalCoor.getSecond()] == EVALUATED) continue;
 	        
-	        //
-	        int accumulatedCellCost = -1;
+	        double accumulatedCellCost;
 	        
 	        // if source cell
 	        if(source[evalCoor.getFirst()][evalCoor.getSecond()] != 0) {
 	            accumulatedCellCost = 0;
 	        }
 	        else {
+	        	// Accumulated Cost = accumulated cost of neighbor + discrete cost of cell + cost to traverse cell
 	        	accumulatedCellCost = eval.getFirst() + discreteCost[evalCoor.getFirst()][evalCoor.getSecond()] + costDistance;
 	        }
 	        
@@ -109,50 +111,53 @@ public class AccumulatedCostAnalysis {
 	        accumulatedCost[evalCoor.getFirst()][evalCoor.getSecond()] = accumulatedCellCost;
 	        
 	        // update status of eval to evaluated
-	        status[evalCoor.getFirst()][evalCoor.getSecond()] = 2;
+	        status[evalCoor.getFirst()][evalCoor.getSecond()] = EVALUATED;
 	        
-	        // add neighbours to toEvaluate with a priority of accumulatedCellCost (where lower is higher priority if the neighbour hasn't been evaluated yet
-	        // add up
-	        if(evalCoor.getSecond() + 1 < height && status[evalCoor.getFirst()][evalCoor.getSecond() + 1] != 2) {
-	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst(), evalCoor.getSecond() + 1);
-	            status[evalCoor.getFirst()][evalCoor.getSecond() +  1] = 1;
-	        }
+	        // add neighbor coordinate the accumulated cost of the current cell to toEvalute if that cell does not have the status of 2 yet
 	        // add down
-	        if(evalCoor.getSecond() - 1 >= 0 && status[evalCoor.getFirst()][evalCoor.getSecond() -  1] != 2) {
+	        if(evalCoor.getSecond() + 1 < height && status[evalCoor.getFirst()][evalCoor.getSecond() + 1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst(), evalCoor.getSecond() + 1);
+	            status[evalCoor.getFirst()][evalCoor.getSecond() +  1] = DISCOVERED;
+	        }
+	        // add up
+	        if(evalCoor.getSecond() - 1 >= 0 && status[evalCoor.getFirst()][evalCoor.getSecond() -  1] != EVALUATED) {
 	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst(), evalCoor.getSecond() - 1);
-	            status[evalCoor.getFirst()][evalCoor.getSecond() -  1] = 1;
+	            status[evalCoor.getFirst()][evalCoor.getSecond() -  1] = DISCOVERED;
 	        }
 	        // add right
-	        if(evalCoor.getFirst() + 1 < width && status[evalCoor.getFirst() + 1][evalCoor.getSecond()] != 2) {
+	        if(evalCoor.getFirst() + 1 < width && status[evalCoor.getFirst() + 1][evalCoor.getSecond()] != EVALUATED) {
 	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() + 1, evalCoor.getSecond());
-	            status[evalCoor.getFirst() + 1][evalCoor.getSecond()] = 1;
+	            status[evalCoor.getFirst() + 1][evalCoor.getSecond()] = DISCOVERED;
 	        }
 	        // add left
-	        if(evalCoor.getFirst() - 1 >= 0 && status[evalCoor.getFirst() - 1][evalCoor.getSecond()] != 2) {
+	        if(evalCoor.getFirst() - 1 >= 0 && status[evalCoor.getFirst() - 1][evalCoor.getSecond()] != EVALUATED) {
 	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() -  1, evalCoor.getSecond());
-	            status[evalCoor.getFirst() - 1][evalCoor.getSecond()] = 1;
+	            status[evalCoor.getFirst() - 1][evalCoor.getSecond()] = DISCOVERED;
 	        }
-	        
+	        // add right-up
+	        if((evalCoor.getFirst() + 1 < width && evalCoor.getSecond() - 1 >= 0) && status[evalCoor.getFirst() + 1][evalCoor.getSecond() -  1] != EVALUATED) {
+	        	toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() + 1, evalCoor.getSecond() - 1);
+	            status[evalCoor.getFirst() + 1][evalCoor.getSecond() -  1] = DISCOVERED;
+	        }
+	        // add left-up
+	        if((evalCoor.getFirst() - 1 >= 0 && evalCoor.getSecond() - 1 >= 0)&& status[evalCoor.getFirst() - 1][evalCoor.getSecond() -  1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() - 1, evalCoor.getSecond() - 1);
+	            status[evalCoor.getFirst() - 1][evalCoor.getSecond() -  1] = DISCOVERED;
+	        }
+	        //add right-down
+	        if((evalCoor.getFirst() + 1 < width && evalCoor.getSecond() + 1 < height) && status[evalCoor.getFirst() + 1][evalCoor.getSecond() + 1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() + 1, evalCoor.getSecond() + 1);
+	            status[evalCoor.getFirst() + 1][evalCoor.getSecond() + 1] = DISCOVERED;
+	        }
+	        //add left-down
+	        if((evalCoor.getFirst() - 1 >= 0 && evalCoor.getSecond() + 1 < height) && status[evalCoor.getFirst() - 1][evalCoor.getSecond() + 1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost, evalCoor.getFirst() -  1, evalCoor.getSecond() + 1);
+	            status[evalCoor.getFirst() - 1][evalCoor.getSecond() + 1] = DISCOVERED;
+	        }
 	    }
 	    
 	    // Return generated accumulatedCost map
 	    return accumulatedCost;
 	}
-
-	// returns true if it the cell has been evaluated and the accumulatedCost of the cell is smallest
-	private static boolean checkCheapest(int x, int y, int[][] status, int[][] accumulatedCost, Pair<Integer, Integer> cheapest)
-	{
-	    int statusVal = status[x][y];
-	    if(statusVal == 2) {
-	        if(cheapest == null) return true;
-	        else if(accumulatedCost[cheapest.getFirst()][cheapest.getSecond()] > accumulatedCost[x][y]) {
-	            return true;
-	        }
-	    }
-	    return false;
-	}
-
-
-
 
 }

@@ -1,11 +1,8 @@
 package fileUtils;
 
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.awt.image.PixelInterleavedSampleModel;
 import java.awt.image.Raster;
-import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
