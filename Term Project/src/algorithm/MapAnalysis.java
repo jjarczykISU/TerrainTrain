@@ -34,7 +34,7 @@ public class MapAnalysis {
 		
 		while(currValue != 0) {
 			Pair<Integer, Integer> nextCell = null;
-			double smallestValue = currValue;
+			double smallestValue = -1;
 			// Down
 			if(y + 1 < accumulatedCost[0].length && path[x][y + 1] != 1) {
 				if(smallestValue == -1 || accumulatedCost[x][y + 1] < smallestValue) {
