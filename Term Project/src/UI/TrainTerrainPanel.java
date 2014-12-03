@@ -47,32 +47,14 @@ public class TrainTerrainPanel extends JPanel {
 	private int[][] waterLayer;
 
 	public TrainTerrainPanel() {
+		// Set layout of panel to BorderLayout 
 		super(new BorderLayout());
 		
+		// Add a JTabbedPane
 		tabbedPane = new JTabbedPane(JTabbedPane.BOTTOM);
 		add(tabbedPane, BorderLayout.CENTER);
-		tabbedPane.addComponentListener(new ComponentListener() {
-			@Override
-			public void componentResized(ComponentEvent e) {
-				updateImages();
-			}
-
-			@Override
-			public void componentHidden(ComponentEvent arg0) {
-				//nothing
-			}
-
-			@Override
-			public void componentMoved(ComponentEvent arg0) {
-				//nothing
-			}
-
-			@Override
-			public void componentShown(ComponentEvent arg0) {
-				//nothing
-			}
-		});
 		
+		// Add Panels to JTabbedPane that will hold the image data
 		JPanel altitudePanel = new JPanel();
 		altitudeMap = new JLabel();
 		altitudePanel.add(altitudeMap);
@@ -99,13 +81,12 @@ public class TrainTerrainPanel extends JPanel {
 		tabbedPane.addTab("Calculated Path", null, pathPanel, null);
 		
 		
+		// Add Buttons for User Interaction
 		JPanel inputAndOptionsPanel = new JPanel();
 		add(inputAndOptionsPanel, BorderLayout.PAGE_END);
 		
 		JPanel weightingPanel = new JPanel();
 		inputAndOptionsPanel.add(weightingPanel);
-		
-		
 		
 		JPanel buttonPanel =  new JPanel();
 		inputAndOptionsPanel.add(buttonPanel);
@@ -114,9 +95,17 @@ public class TrainTerrainPanel extends JPanel {
 		fileChooser.setAcceptAllFileFilterUsed(false);
 		fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Image files", ImageIO.getReaderFileSuffixes()));
 		
+		// Add buttons
 		final JButton altitudeMapButton = new JButton("Altitude Map");
 		buttonPanel.add(altitudeMapButton);
+		final JButton waterMapButton = new JButton("Water Map");
+		buttonPanel.add(waterMapButton);
+		final JButton analysisButton = new JButton("Perform Analysis");
+		buttonPanel.add(analysisButton);
+		final JButton resetButton = new JButton("Reset");
+		buttonPanel.add(resetButton);
 		
+		// Add ActionListeners for buttons
 		altitudeMapButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -138,10 +127,6 @@ public class TrainTerrainPanel extends JPanel {
 
 			}
 		});
-		
-		final JButton waterMapButton = new JButton("Water Map");
-		buttonPanel.add(waterMapButton);
-		
 		waterMapButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -162,12 +147,7 @@ public class TrainTerrainPanel extends JPanel {
 				}
 
 			}
-		});
-		
-		
-		final JButton analysisButton = new JButton("Perform Analysis");
-		buttonPanel.add(analysisButton);
-		
+		});	
 		analysisButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -199,17 +179,13 @@ public class TrainTerrainPanel extends JPanel {
 					analysis = new MapAnalysis(source, start, layers, weightings);
 					
 					// Update Images
-					discreteImage = discreteCostMapToBufferedImage(analysis.discreteCost);
-					accumulatedImage = accumulatedCostMapToBufferedImage(analysis.accumulatedCost);
+					discreteImage = mapToBufferedImage(analysis.discreteCost);
+					accumulatedImage = mapToBufferedImage(analysis.accumulatedCost);
 					pathImage = pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer);
 					updateImages();
 				}
 			}
-		});
-		
-		final JButton resetButton = new JButton("Reset");
-		buttonPanel.add(resetButton);
-		
+		});		
 		resetButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -223,9 +199,30 @@ public class TrainTerrainPanel extends JPanel {
 				updateImages();
 			}
 		});
+		//Add listener for window resizing
+		tabbedPane.addComponentListener(new ComponentListener() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				updateImages();
+			}
+
+			@Override
+			public void componentHidden(ComponentEvent arg0) { /*nothing*/ }
+
+			@Override
+			public void componentMoved(ComponentEvent arg0) { /*nothing*/ }
+
+			@Override
+			public void componentShown(ComponentEvent arg0) { /*nothing*/ }
+		});
 
 	}
 	
+	/**
+	 * Inverts the colors of an image graph.
+	 * @param graph 2D array to be inverted
+	 * @return a graph where all the values are inverted using value = 255 - value for each cell
+	 */
 	private int[][] invertGraph(int[][] graph) {
 		int[][] inverted = new int[graph.length][graph[0].length];
 		for(int i = 0; i < graph.length; i++) {
@@ -235,7 +232,9 @@ public class TrainTerrainPanel extends JPanel {
 		}
 		return inverted;
 	}
-	
+	/**
+	 * Clears all the images that are generated from map analysis
+	 */
 	private void clearAnalysisImages() {
 		discreteImage = accumulatedImage = pathImage = null;
 	}
@@ -280,6 +279,7 @@ public class TrainTerrainPanel extends JPanel {
 		updateImage(accumulatedMap, accumulatedImage, width, height);
 		updateImage(pathMap, pathImage, width, height);
 	}
+	//a helper function
 	private void updateImage(JLabel label, BufferedImage image, int width, int height) {
 		if (image != null) {
 			label.setIcon(new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_DEFAULT)));
@@ -288,38 +288,33 @@ public class TrainTerrainPanel extends JPanel {
 		}
 	}
 	
-	private BufferedImage discreteCostMapToBufferedImage(double[][] discreteCost) {
-		int[][] modifiedMap = new int[discreteCost.length][discreteCost[0].length];
+	/**
+	 * Converts 2D array to a grayscale BufferedImage
+	 * @param dataMap 2D array to be converted to BufferedImage
+	 * @return converted BufferedImage
+	 */
+	private BufferedImage mapToBufferedImage(double[][] dataMap) {
+		int[][] modifiedMap = new int[dataMap.length][dataMap[0].length];
 		double max = 1;
-		for(int i = 0; i < discreteCost.length; i++) {
-			for(int j = 0; j < discreteCost[0].length; j++) {
-				if(discreteCost[i][j] > max) max = discreteCost[i][j]; 
+		for(int i = 0; i < dataMap.length; i++) {
+			for(int j = 0; j < dataMap[0].length; j++) {
+				if(dataMap[i][j] > max) max = dataMap[i][j]; 
 			}
 		}
-		for(int i = 0; i < discreteCost.length; i++) {
-			for(int j = 0; j < discreteCost[0].length; j++) {
-				modifiedMap[i][j] = (int)(discreteCost[i][j] * 255/max);
+		for(int i = 0; i < dataMap.length; i++) {
+			for(int j = 0; j < dataMap[0].length; j++) {
+				modifiedMap[i][j] = (int)(dataMap[i][j] * 255/max);
 			}
 		}
 		return (BufferedImage) FileUtil.mapToImage(modifiedMap);
 	}
-	
-	private BufferedImage accumulatedCostMapToBufferedImage(double[][] accumulatedCost) {
-		int[][] modifiedMap = new int[accumulatedCost.length][accumulatedCost[0].length];
-		double max = 1;
-		for(int i = 0; i < accumulatedCost.length; i++) {
-			for(int j = 0; j < accumulatedCost[0].length; j++) {
-				if(accumulatedCost[i][j] > max) max = accumulatedCost[i][j]; 
-			}
-		}
-		for(int i = 0; i < modifiedMap.length; i++) {
-			for(int j = 0; j < modifiedMap[0].length; j++) {
-				modifiedMap[i][j] = (int)(accumulatedCost[i][j]*255/max);
-			}
-		}
-		return (BufferedImage) FileUtil.mapToImage(modifiedMap);
-	}
-	
+
+	/**
+	 * Converts path and altitudeMap to a BUfferedImage that will show the path as a red line on the altitudeMap
+	 * @param path 2D path array that represents a path that will be overlayed on the image
+	 * @param altitudeMap 2D altitudeMap array that represents the altitude data
+	 * @return converted BufferedImage
+	 */
 	private BufferedImage pathAndAltitudeToBufferedImage(int[][] path, int[][] altitudeMap) {
 		BufferedImage pathImage = FileUtil.mapToImage(altitudeMap);
 		for(int i = 0; i < path.length; i++) {

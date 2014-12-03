@@ -100,6 +100,7 @@ public class DiscreteCostAnalysis {
 	
 	/**
 	 * Calculates the discrete cost map for the altitude layer
+	 * (1 most preferred, 9 least preferred)
 	 * @param altitudeLayer 2D array representing the altitudes of the map
 	 * @param cellSize number of units representing the length/width of a single cell
 	 * @return discrete cost map for altitude
@@ -128,7 +129,7 @@ public class DiscreteCostAnalysis {
 		return cost;
 	}
 	/**
-	 * Preference cost for altitude differences (angle between neighbors) for a single cell
+	 * Preference cost for altitude differences (angle between neighbors) for a single cell.
 	 * (1 most preferred, 9 least preferred):
 	 * 1 -> <15 degrees and >-50 degrees
 	 * 2 -> <30 degrees and >-50 degrees
