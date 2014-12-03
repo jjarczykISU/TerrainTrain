@@ -1,8 +1,11 @@
 package UI;
 
 import java.awt.BorderLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,26 +27,51 @@ import algorithm.MapUtil.Pair;
 import fileUtils.FileUtil;
 
 public class TrainTerrainPanel extends JPanel {
+	private static final long serialVersionUID = 1L;
+	
 	//TODO Clean up code
+	
+	private JTabbedPane tabbedPane;
 	
 	private JLabel altitudeMap;
 	private JLabel waterMap;
 	private JLabel discreteMap;
 	private JLabel accumulatedMap;
 	private JLabel pathMap;
+	
+	private BufferedImage altitudeImage, waterImage, discreteImage, accumulatedImage, pathImage;
 
 	private MapAnalysis analysis;
 
 	private int[][] altitudeLayer;
 	private int[][] waterLayer;
-	
-	private static final long serialVersionUID = 1L;
 
 	public TrainTerrainPanel() {
 		super(new BorderLayout());
 		
-		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.BOTTOM);
+		tabbedPane = new JTabbedPane(JTabbedPane.BOTTOM);
 		add(tabbedPane, BorderLayout.CENTER);
+		tabbedPane.addComponentListener(new ComponentListener() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				updateImages();
+			}
+
+			@Override
+			public void componentHidden(ComponentEvent arg0) {
+				//nothing
+			}
+
+			@Override
+			public void componentMoved(ComponentEvent arg0) {
+				//nothing
+			}
+
+			@Override
+			public void componentShown(ComponentEvent arg0) {
+				//nothing
+			}
+		});
 		
 		JPanel altitudePanel = new JPanel();
 		altitudeMap = new JLabel();
@@ -98,12 +126,14 @@ public class TrainTerrainPanel extends JPanel {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					clearAnalysisImages();
 					try {
-						altitudeLayer = FileUtil.imageToMap(fileChooser.getSelectedFile());
-						altitudeMap.setIcon(new ImageIcon(FileUtil.mapToImage(altitudeLayer)));
+						altitudeImage = ImageIO.read(fileChooser.getSelectedFile());
+						altitudeLayer = FileUtil.imageToMap(altitudeImage);
+						altitudeMap.setIcon(new ImageIcon(altitudeImage));
 					} catch (IOException e) {
+						altitudeImage = null;
 						altitudeLayer = null;
-						altitudeMap.setIcon(new ImageIcon());
-					}						
+					}
+					updateImages();					
 				}
 
 			}
@@ -121,12 +151,14 @@ public class TrainTerrainPanel extends JPanel {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					clearAnalysisImages();
 					try {
-						waterLayer = FileUtil.imageToMap(fileChooser.getSelectedFile());
-						waterMap.setIcon(new ImageIcon(FileUtil.mapToImage(waterLayer)));
+						waterImage = ImageIO.read(fileChooser.getSelectedFile());
+						waterLayer = FileUtil.imageToMap(waterImage);
+						waterMap.setIcon(new ImageIcon(waterImage));
 					} catch (IOException e) {
+						waterImage = null;
 						waterLayer = null;
-						waterMap.setIcon(new ImageIcon());
-					}						
+					}
+					updateImages();
 				}
 
 			}
@@ -167,9 +199,10 @@ public class TrainTerrainPanel extends JPanel {
 					analysis = new MapAnalysis(source, start, layers, weightings);
 					
 					// Update Images
-					discreteMap.setIcon(new ImageIcon(discreteCostMapToBufferedImage(analysis.discreteCost)));
-					accumulatedMap.setIcon(new ImageIcon(accumulatedCostMapToBufferedImage(analysis.accumulatedCost)));
-					pathMap.setIcon(new ImageIcon(pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer)));
+					discreteImage = discreteCostMapToBufferedImage(analysis.discreteCost);
+					accumulatedImage = accumulatedCostMapToBufferedImage(analysis.accumulatedCost);
+					pathImage = pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer);
+					updateImages();
 				}
 			}
 		});
@@ -186,9 +219,8 @@ public class TrainTerrainPanel extends JPanel {
 				waterLayer = null;
 				
 				// Clear Images
-				altitudeMap.setIcon(new ImageIcon());
-				waterMap.setIcon(new ImageIcon());
-				clearAnalysisImages();
+				altitudeImage = waterImage = discreteImage = accumulatedImage = pathImage = null;
+				updateImages();
 			}
 		});
 
@@ -205,9 +237,55 @@ public class TrainTerrainPanel extends JPanel {
 	}
 	
 	private void clearAnalysisImages() {
-		discreteMap.setIcon(new ImageIcon());
-		accumulatedMap.setIcon(new ImageIcon());
-		pathMap.setIcon(new ImageIcon());
+		discreteImage = accumulatedImage = pathImage = null;
+	}
+	
+	/**
+	 * updates displayed images, scaled to fit window
+	 */
+	private void updateImages() {
+		//find size of our images, if possible
+		int imageWidth, imageHeight;
+		if (altitudeImage != null) {
+			imageWidth = altitudeImage.getWidth();
+			imageHeight = altitudeImage.getHeight();
+		} else if (waterImage != null) {
+			imageWidth = waterImage.getWidth();
+			imageHeight = waterImage.getHeight();
+		} else {
+			altitudeMap.setIcon(null);
+			waterMap.setIcon(null);
+			discreteMap.setIcon(null);
+			accumulatedMap.setIcon(null);
+			pathMap.setIcon(null);
+			return;
+		}
+		int paneWidth = tabbedPane.getWidth();
+		int paneHeight = tabbedPane.getHeight();
+		//calculate desired display dimensions
+		int width, height;
+		if (paneWidth/paneHeight < imageWidth/imageHeight) { //comparing aspect ratios
+			//match pane width
+			width = paneWidth;
+			height = paneWidth * imageHeight / imageWidth;
+		} else {
+			//match pane height
+			width = paneHeight * imageWidth / imageHeight;
+			height = paneHeight;
+		}
+		
+		updateImage(altitudeMap, altitudeImage, width, height);
+		updateImage(waterMap, waterImage, width, height);
+		updateImage(discreteMap, discreteImage, width, height);
+		updateImage(accumulatedMap, accumulatedImage, width, height);
+		updateImage(pathMap, pathImage, width, height);
+	}
+	private void updateImage(JLabel label, BufferedImage image, int width, int height) {
+		if (image != null) {
+			label.setIcon(new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_DEFAULT)));
+		} else {
+			label.setIcon(null);
+		}
 	}
 	
 	private BufferedImage discreteCostMapToBufferedImage(double[][] discreteCost) {

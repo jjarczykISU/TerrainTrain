@@ -14,9 +14,7 @@ public class FileUtil {
 	 * @return 2D array of the interpreted map
 	 * @throws IOException if there is a problem reading the file
 	 */
-	public static int[][] imageToMap(File file) throws IOException {
-		BufferedImage image = ImageIO.read(file);
-		
+	public static int[][] imageToMap(BufferedImage image) throws IOException {
 		int width = image.getWidth();
 		int height = image.getHeight();
 		
