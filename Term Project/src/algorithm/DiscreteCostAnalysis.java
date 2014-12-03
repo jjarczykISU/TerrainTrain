@@ -1,24 +1,28 @@
 package algorithm;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DiscreteCostAnalysis {
 
 	/**
 	 * Calculates the discrete cost map given a list of of map layers
-	 * @param layers list of 2D arrays whether the first array is the altitude map and the second is the water body map
-	 * @throws IllegalArgumentException if arguments are null or if dimensions of layers are 0 or do not match
+	 * @param layers mapping MapTypes to 2D arrays representing the map data to be analyzed
+	 * @param weightings mapping of MapTypes to a double weighting
+	 * @throws IllegalArgumentException
 	 */
-	public static double[][] generateDiscreteCostMap(List<int[][]> layers) {
+	public static double[][] generateDiscreteCostMap(Map<MapUtil.MapTypes, int[][]> layers, Map<MapUtil.MapTypes, Double> weightings) {
 		
 		// Check that arguments are valid
+		// Check for null arguments
 		if(layers == null) {
 			throw new IllegalArgumentException("Null arguments.");
 		}
 		if(layers.get(0) == null) {
 			throw new IllegalArgumentException("Null arguments.");
 		}
+		// Check for mismatching dimensions
 		int width = layers.get(0).length;
 		if(width == 0) throw new IllegalArgumentException("Illegal dimensions for layers.");
 		int height = layers.get(0)[0].length;
@@ -31,26 +35,43 @@ public class DiscreteCostAnalysis {
 				throw new IllegalArgumentException("Mismatching layer dimensions.");
 			}
 		}
+		// Checks that all layers have a weighting
+		for(MapUtil.MapTypes layer : layers.keySet()) {
+			if(!weightings.containsKey(layer)) {
+				throw new IllegalArgumentException("Missing later weighting.");
+			}
+				
+		}
 		
+		Map<MapUtil.MapTypes, int[][]> layerCosts = new HashMap<MapUtil.MapTypes, int[][]>();
 		// Calculate cost for each layer relative to itself (with each cell valued 1 to 9 inclusive
+		for(MapUtil.MapTypes layer : layers.keySet()) {
+			switch (layer) {
+			case ALTITUDE:
+				layerCosts.put(layer, altitudeLayerCost(layers.get(layer), MapUtil.CELLSIZE));
+				break;
+			case WATER:
+				layerCosts.put(layer, waterLayerCost(layers.get(layer)));
+			default: // do nothing unimplemented map type
+				break;
+			}
+		}
 		
-		List<int[][]> layerCosts = new ArrayList<int[][]>();
-		// First layer is interpreted as altitudes
-		layerCosts.add(altitudeLayerCost(layers.get(0), MapUtil.CELLSIZE));
-		// Second layer is interpreted as water bodies
-		layerCosts.add(waterLaterCost(layers.get(1)));
-		
-		//TODO create a table for weightings?
-		//TODO add more layer logic
-		
-		// Using weightings to combine map layers into discreteCost map
-		
+		// Using weightings to combine map layers into discreteCost map (with special logic for water)
+		boolean withWater = layerCosts.containsKey(MapUtil.MapTypes.WATER);
+		int[][] waterLayerCost = (withWater) ? layerCosts.get(MapUtil.MapTypes.WATER) : null;
 		double[][] discreteCost = new double[width][height]; 
 		for(int i = 0; i < width; i ++) {
 			for(int j = 0; j < height; j ++) {
-				if(layerCosts.get(1)[i][j] != 0) // if there is water and requires a bridge
+				if(withWater && waterLayerCost[i][j] != 1) { // if there is water in this cell
 					discreteCost[i][j] = layerCosts.get(1)[i][j];
-				else discreteCost[i][j] = layerCosts.get(0)[i][j];	
+				} else {
+					for(MapUtil.MapTypes layer : layerCosts.keySet()) {
+						if(layer != MapUtil.MapTypes.WATER) {
+							discreteCost[i][j] += weightings.get(layer)*layerCosts.get(layer)[i][j];
+						}
+					}
+				}
 			}
 		}
 		
@@ -60,12 +81,12 @@ public class DiscreteCostAnalysis {
 	}
 	
 	/**
-	 * Calculates the discrete cost map for the water layer
+	 * Calculates the discrete cost map for the water layer (interprets values as the depth of the water)
 	 * (1 most preferred, 9 least preferred)
 	 * @param waterLater 2D array representing the water bodies on the map
 	 * @return discrete cost map for water bodies
 	 */
-	private static int[][] waterLaterCost(int[][] waterLater) {
+	private static int[][] waterLayerCost(int[][] waterLater) {
 		int[][] cost = new int[waterLater.length][waterLater[0].length];
 		
 		for(int i = 0; i < cost.length; i ++) {

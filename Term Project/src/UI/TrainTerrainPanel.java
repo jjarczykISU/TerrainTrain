@@ -5,8 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -17,10 +17,13 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import algorithm.MapAnalysis;
+import algorithm.MapUtil;
 import algorithm.MapUtil.Pair;
 import fileUtils.FileUtil;
 
 public class TrainTerrainPanel extends JPanel {
+	//TODO Clean up code
+	
 	private JLabel altitudeMap;
 	private JLabel waterMap;
 	private JLabel discreteMap;
@@ -88,6 +91,7 @@ public class TrainTerrainPanel extends JPanel {
 
 				// If file was chosen, update contents of htmlPane
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					clearAnalysisImages();
 					try {
 						altitudeLayer = FileUtil.imageToMap(fileChooser.getSelectedFile());
 						altitudeMap.setIcon(new ImageIcon(FileUtil.mapToImage(altitudeLayer)));
@@ -110,6 +114,7 @@ public class TrainTerrainPanel extends JPanel {
 
 				// If file was chosen, update contents of htmlPane
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					clearAnalysisImages();
 					try {
 						waterLayer = FileUtil.imageToMap(fileChooser.getSelectedFile());
 						waterMap.setIcon(new ImageIcon(FileUtil.mapToImage(waterLayer)));
@@ -134,24 +139,27 @@ public class TrainTerrainPanel extends JPanel {
 				} else if(waterLayer != null && (altitudeLayer.length != waterLayer.length || altitudeLayer[0].length != waterLayer[0].length)) {
 					JOptionPane.showMessageDialog(null, "Altitude and Water Map dimensions do not match");
 				} else {
-					
-					List<int[][]> layers = new ArrayList<int[][]>();
-					layers.add(invertGraph(altitudeLayer));
-					if(waterLayer == null) {
-						int[][] defaultWater = new int[altitudeLayer.length][altitudeLayer[0].length];
-						layers.add(defaultWater);
-					} else{
-						layers.add(invertGraph(waterLayer));
+					// Set mapping of map type to map data
+					Map<MapUtil.MapTypes, int[][]> layers = new HashMap<MapUtil.MapTypes, int[][]>();
+					layers.put(MapUtil.MapTypes.ALTITUDE, invertGraph(altitudeLayer));
+					if(waterLayer != null) {
+						layers.put(MapUtil.MapTypes.WATER, invertGraph(waterLayer));
 					}
 					
-					// Set source
+					// Set source for path
 					int[][] source = new int[altitudeLayer.length][altitudeLayer[0].length];
 					source[source.length - 1][source[0].length - 1] = 1;
-					// Set start
+					// Set start for path
 					Pair<Integer, Integer> start = new Pair<Integer, Integer>(0, 0);
 					
+					//TODO modify this to be updated in the UI
+					//TODO also make sure that each MapType in layers has a weighting (otherwise an exception is thrown in MapAnalysis)
+					Map<MapUtil.MapTypes, Double> weightings = new HashMap<MapUtil.MapTypes, Double>();
+					weightings.put(MapUtil.MapTypes.ALTITUDE, 1.0);
+					weightings.put(MapUtil.MapTypes.WATER, 2.0);
+					
 					// Perform analysis
-					analysis = new MapAnalysis(source, layers, start);
+					analysis = new MapAnalysis(source, start, layers, weightings);
 					
 					// Update Images
 					discreteMap.setIcon(new ImageIcon(discreteCostMapToBufferedImage(analysis.discreteCost)));
@@ -175,9 +183,7 @@ public class TrainTerrainPanel extends JPanel {
 				// Clear Images
 				altitudeMap.setIcon(new ImageIcon());
 				waterMap.setIcon(new ImageIcon());
-				discreteMap.setIcon(new ImageIcon());
-				accumulatedMap.setIcon(new ImageIcon());
-				pathMap.setIcon(new ImageIcon());
+				clearAnalysisImages();
 			}
 		});
 
@@ -234,5 +240,11 @@ public class TrainTerrainPanel extends JPanel {
 			}
 		}
 		return (BufferedImage) FileUtil.mapToImage(modifiedMap);
+	}
+	
+	private void clearAnalysisImages() {
+		discreteMap.setIcon(new ImageIcon());
+		accumulatedMap.setIcon(new ImageIcon());
+		pathMap.setIcon(new ImageIcon());
 	}
 }

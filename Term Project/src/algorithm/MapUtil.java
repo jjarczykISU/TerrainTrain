@@ -3,6 +3,8 @@ package algorithm;
 public class MapUtil {
 	public static double CELLSIZE = 30.0;
 	
+	public enum MapTypes{ ALTITUDE, WATER, HOUSINGDENSITY, ROADS };
+	
 	public static class Pair<A,B> {
 	    private A first;
 	    private B second;

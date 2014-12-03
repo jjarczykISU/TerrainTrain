@@ -8,7 +8,7 @@ public class AccumulatedCostAnalysis {
 
 	private static class SortedCellList
 	{
-		//TODO replace with more efficient data structure, such as a self-balancing tree
+		//TODO replace with more efficient data structure, such as a self-balancing tree, or maybe a priority queue
 	    ArrayList<Pair<Double, Pair<Integer,Integer>>> list;
 	    public SortedCellList()
 	    {
