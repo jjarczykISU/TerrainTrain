@@ -55,28 +55,38 @@ public class TrainTerrainPanel extends JPanel {
 		add(tabbedPane, BorderLayout.CENTER);
 		
 		// Add Panels to JTabbedPane that will hold the image data
-		JPanel altitudePanel = new JPanel();
+		JPanel altitudePanel = new JPanel(new BorderLayout());
 		altitudeMap = new JLabel();
+		altitudeMap.setHorizontalAlignment(JLabel.CENTER);
+		altitudeMap.setVerticalAlignment(JLabel.CENTER);
 		altitudePanel.add(altitudeMap);
 		tabbedPane.addTab("Altitude Map", null, altitudePanel, null);
 		
-		JPanel waterPanel = new JPanel();
+		JPanel waterPanel = new JPanel(new BorderLayout());
 		waterMap = new JLabel();
+		waterMap.setHorizontalAlignment(JLabel.CENTER);
+		waterMap.setVerticalAlignment(JLabel.CENTER);
 		waterPanel.add(waterMap);
 		tabbedPane.addTab("Water Map", null, waterPanel, null);
 		
-		JPanel discretePanel = new JPanel();
+		JPanel discretePanel = new JPanel(new BorderLayout());
 		discreteMap = new JLabel();
+		discreteMap.setHorizontalAlignment(JLabel.CENTER);
+		discreteMap.setVerticalAlignment(JLabel.CENTER);
 		discretePanel.add(discreteMap);
 		tabbedPane.addTab("Discrete Map", null, discretePanel, null);
 		
-		JPanel accumulatedPanel = new JPanel();
+		JPanel accumulatedPanel = new JPanel(new BorderLayout());
 		accumulatedMap = new JLabel();
+		accumulatedMap.setHorizontalAlignment(JLabel.CENTER);
+		accumulatedMap.setVerticalAlignment(JLabel.CENTER);
 		accumulatedPanel.add(accumulatedMap);
 		tabbedPane.addTab("Accumulated Cost Map", null, accumulatedPanel, null);
 		
-		JPanel pathPanel = new JPanel();
+		JPanel pathPanel = new JPanel(new BorderLayout());
 		pathMap = new JLabel();
+		pathMap.setHorizontalAlignment(JLabel.CENTER);
+		pathMap.setVerticalAlignment(JLabel.CENTER);
 		pathPanel.add(pathMap);
 		tabbedPane.addTab("Calculated Path", null, pathPanel, null);
 		
@@ -259,11 +269,11 @@ public class TrainTerrainPanel extends JPanel {
 			pathMap.setIcon(null);
 			return;
 		}
-		int paneWidth = tabbedPane.getWidth();
-		int paneHeight = tabbedPane.getHeight();
+		int paneWidth = altitudeMap.getWidth();
+		int paneHeight = altitudeMap.getHeight();
 		//calculate desired display dimensions
 		int width, height;
-		if (paneWidth/paneHeight < imageWidth/imageHeight) { //comparing aspect ratios
+		if ((double)paneWidth/paneHeight < (double)imageWidth/imageHeight) { //comparing aspect ratios (must be floating point)
 			//match pane width
 			width = paneWidth;
 			height = paneWidth * imageHeight / imageWidth;
