@@ -12,11 +12,11 @@ public class FileUtil {
 	 * @return 2D array of the interpreted map
 	 * @throws IOException if there is a problem reading the file
 	 */
-	public static int[][] imageToMap(BufferedImage image) {
+	public static double[][] imageToMap(BufferedImage image) {
 		int width = image.getWidth();
 		int height = image.getHeight();
 		
-		int map[][] = new int[width][height];
+		double map[][] = new double[width][height];
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j ++) {
 				map[i][j] = image.getRGB(i, j) & 255; //mask to only sample first channel
@@ -31,7 +31,7 @@ public class FileUtil {
 	 * @param map array to be converted to image
 	 * @return grayscale image interpreted from array
 	 */
-	public static BufferedImage mapToImage(int[][] map) {
+	public static BufferedImage mapToImage(double[][] map) {
 		int width = map.length;
 		int height = map[0].length;
 		
@@ -39,7 +39,7 @@ public class FileUtil {
 		
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j ++) {
-				int data = map[i][j];
+				int data = Double.valueOf(map[i][j]).intValue();
 				int rgb = (data<<16) | (data<<8) | (data); //set all color channels to same value for grayscale image
 				image.setRGB(i, j, rgb);
 			}

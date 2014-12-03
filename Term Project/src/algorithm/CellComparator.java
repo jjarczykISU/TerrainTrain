@@ -9,7 +9,7 @@ public class CellComparator implements Comparator<Pair<Double, Pair<Integer,Inte
 	@Override
 	public int compare(Pair<Double, Pair<Integer, Integer>> arg0,
 			Pair<Double, Pair<Integer, Integer>> arg1) {
-		// TODO Auto-generated method stub
+		
 		return (int) Math.copySign(1, (arg0.getFirst() - arg1.getFirst()));
 	}
 

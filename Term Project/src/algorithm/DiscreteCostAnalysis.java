@@ -12,7 +12,7 @@ public class DiscreteCostAnalysis {
 	 * @param weightings mapping of MapTypes to a double weighting
 	 * @throws IllegalArgumentException
 	 */
-	public static double[][] generateDiscreteCostMap(Map<MapUtil.MapTypes, int[][]> layers, Map<MapUtil.MapTypes, Double> weightings) {
+	public static double[][] generateDiscreteCostMap(Map<MapUtil.MapTypes, double[][]> layers, Map<MapUtil.MapTypes, Double> weightings) {
 		
 		// Check that arguments are valid
 		// Check for null arguments
@@ -22,7 +22,7 @@ public class DiscreteCostAnalysis {
 		// Check for mismatching dimensions
 		int width = -1;
 		int height = -1;
-		for(int[][] layer : layers.values()) {
+		for(double[][] layer : layers.values()) {
 			if(width == -1 || height == -1) {
 				width = layer.length;
 				if(width == 0) throw new IllegalArgumentException("Illegal dimensions for layers.");
@@ -42,7 +42,7 @@ public class DiscreteCostAnalysis {
 				
 		}
 		
-		Map<MapUtil.MapTypes, int[][]> layerCosts = new HashMap<MapUtil.MapTypes, int[][]>();
+		Map<MapUtil.MapTypes, double[][]> layerCosts = new HashMap<MapUtil.MapTypes, double[][]>();
 		// Calculate cost for each layer relative to itself (with each cell valued 1 to 9 inclusive
 		for(MapUtil.MapTypes layer : layers.keySet()) {
 			switch (layer) {
@@ -58,7 +58,7 @@ public class DiscreteCostAnalysis {
 		
 		// Using weightings to combine map layers into discreteCost map (with special logic for water)
 		boolean withWater = layerCosts.containsKey(MapUtil.MapTypes.WATER);
-		int[][] waterLayerCost = (withWater) ? layerCosts.get(MapUtil.MapTypes.WATER) : null;
+		double[][] waterLayerCost = (withWater) ? layerCosts.get(MapUtil.MapTypes.WATER) : null;
 		double[][] discreteCost = new double[width][height]; 
 		for(int i = 0; i < width; i ++) {
 			for(int j = 0; j < height; j ++) {
@@ -83,8 +83,8 @@ public class DiscreteCostAnalysis {
 	 * @param waterLater 2D array representing the water bodies on the map
 	 * @return discrete cost map for water bodies
 	 */
-	private static int[][] waterLayerCost(int[][] waterLater) {
-		int[][] cost = new int[waterLater.length][waterLater[0].length];
+	private static double[][] waterLayerCost(double[][] waterLater) {
+		double[][] cost = new double[waterLater.length][waterLater[0].length];
 		
 		for(int i = 0; i < cost.length; i ++) {
 			for(int j = 0; j < cost[0].length; j ++) {
@@ -103,14 +103,14 @@ public class DiscreteCostAnalysis {
 	 * @param cellSize number of units representing the length/width of a single cell
 	 * @return discrete cost map for altitude
 	 */
-	private static int[][] altitudeLayerCost(int[][] altitudeLayer, double cellSize) 
+	private static double[][] altitudeLayerCost(double[][] altitudeLayer, double cellSize) 
 	{
-		int[][] cost = new int[altitudeLayer.length][altitudeLayer[0].length];
+		double[][] cost = new double[altitudeLayer.length][altitudeLayer[0].length];
 		
 		for(int i = 0; i < cost.length; i ++) {
 			for(int j = 0; j < cost[0].length; j ++) {
 				// List of altitudes of neighbor cells 
-				ArrayList<Integer> neighbors = new ArrayList<Integer>();
+				ArrayList<Double> neighbors = new ArrayList<Double>();
 				// Up
 				if(j + 1 < cost[0].length) neighbors.add(altitudeLayer[i][j + 1]);
 				// Down
@@ -138,15 +138,15 @@ public class DiscreteCostAnalysis {
 	 * @return the preference of the slope of the cell given the neighboring cells
 	 * @throws IllegalArgumentException neighbors is null or if the number of neighbors is 1 or less
 	 */
-	private static int slopePreference(int cellAltitude, ArrayList<Integer> neighbors, double cellSize) {
+	private static int slopePreference(double altitudeLayer, ArrayList<Double> neighbors, double cellSize) {
 		if(neighbors == null || neighbors.size() <= 1) {
 			throw new IllegalArgumentException();
 		}
 		double greatestSlope = 0;
 		double smallestSlope = Integer.MAX_VALUE;
 
-		for(Integer alt : neighbors) {
-			double calcSlope = cellAltitude - alt;
+		for(Double alt : neighbors) {
+			double calcSlope = altitudeLayer - alt;
 			calcSlope /= (cellSize);
 			calcSlope = Math.toDegrees(Math.atan(calcSlope));			
 			
@@ -154,6 +154,7 @@ public class DiscreteCostAnalysis {
 			if(calcSlope < smallestSlope) smallestSlope = calcSlope;
 		}
 		
+		//TODO low precision and aliasing, does not recognize small differences.
 		int preference = 9;
 		if(greatestSlope < 15 && smallestSlope >= -50) { 
 			preference = 1;

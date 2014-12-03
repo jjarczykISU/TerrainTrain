@@ -19,7 +19,7 @@ public class MapAnalysis {
 	 * @param layers mapping of a map type to the map information
 	 * @param weightings mapping of a map type to a weighting
 	 */
-	public MapAnalysis(int[][] source, Pair<Integer, Integer> start, Map<MapUtil.MapTypes, int[][]> layers, Map<MapUtil.MapTypes, Double> weightings) {	
+	public MapAnalysis(int[][] source, Pair<Integer, Integer> start, Map<MapUtil.MapTypes, double[][]> layers, Map<MapUtil.MapTypes, Double> weightings) {	
 		// Discrete cost analysis
 		discreteCost =  DiscreteCostAnalysis.generateDiscreteCostMap(layers, weightings);
 		

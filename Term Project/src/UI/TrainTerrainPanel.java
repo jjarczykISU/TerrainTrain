@@ -43,8 +43,8 @@ public class TrainTerrainPanel extends JPanel {
 
 	private MapAnalysis analysis;
 
-	private int[][] altitudeLayer;
-	private int[][] waterLayer;
+	private double[][] altitudeLayer;
+	private double[][] waterLayer;
 
 	public TrainTerrainPanel() {
 		// Set layout of panel to BorderLayout 
@@ -166,7 +166,7 @@ public class TrainTerrainPanel extends JPanel {
 					return;
 				}
 				
-				//TODO query user for water level
+				//query user for water level
 				String input = JOptionPane.showInputDialog("Altitude of water level?");
 				double level;
 				if (input != null) try {
@@ -177,7 +177,6 @@ public class TrainTerrainPanel extends JPanel {
 				} else {
 					return; //cancelled
 				}
-				//double level = 64;
 				
 				//generate water map
 				if (level > 0) {
@@ -188,9 +187,9 @@ public class TrainTerrainPanel extends JPanel {
 					int height = waterLayer[0].length;
 					for(int i = 0; i < width; i++) {
 						for(int j = 0; j < height; j ++) {
-							int alt = waterLayer[i][j];
-							if (alt < level) {
-								waterLayer[i][j] = 255 - (int) ((level - alt) + 128.0); //water depth + flat distance rate
+							double altitude = waterLayer[i][j];
+							if (altitude < level) {
+								waterLayer[i][j] = 255 - (int) ((level - altitude) + 128.0); //water depth + flat distance rate
 								//waterLayer[i][j] = 0; //avoid water like a cat
 							} else {
 								waterLayer[i][j] = 255;
@@ -216,7 +215,7 @@ public class TrainTerrainPanel extends JPanel {
 					JOptionPane.showMessageDialog(null, "Altitude and Water Map dimensions do not match");
 				} else {
 					// Set mapping of map type to map data
-					Map<MapUtil.MapTypes, int[][]> layers = new HashMap<MapUtil.MapTypes, int[][]>();
+					Map<MapUtil.MapTypes, double[][]> layers = new HashMap<MapUtil.MapTypes, double[][]>();
 					layers.put(MapUtil.MapTypes.ALTITUDE, invertGraph(altitudeLayer));
 					if(waterLayer != null) {
 						layers.put(MapUtil.MapTypes.WATER, invertGraph(waterLayer));
@@ -282,8 +281,8 @@ public class TrainTerrainPanel extends JPanel {
 	 * @param graph 2D array to be inverted
 	 * @return a graph where all the values are inverted using value = 255 - value for each cell
 	 */
-	private int[][] invertGraph(int[][] graph) {
-		int[][] inverted = new int[graph.length][graph[0].length];
+	private double[][] invertGraph(double[][] graph) {
+		double[][] inverted = new double[graph.length][graph[0].length];
 		for(int i = 0; i < graph.length; i++) {
 			for(int j = 0; j < graph[0].length; j++) {
 				inverted[i][j] = 255 - graph[i][j]; 
@@ -353,7 +352,7 @@ public class TrainTerrainPanel extends JPanel {
 	 * @return converted BufferedImage
 	 */
 	private BufferedImage mapToBufferedImage(double[][] dataMap) {
-		int[][] modifiedMap = new int[dataMap.length][dataMap[0].length];
+		double[][] modifiedMap = new double[dataMap.length][dataMap[0].length];
 		double max = 1;
 		for(int i = 0; i < dataMap.length; i++) {
 			for(int j = 0; j < dataMap[0].length; j++) {
@@ -374,7 +373,7 @@ public class TrainTerrainPanel extends JPanel {
 	 * @param altitudeMap 2D altitudeMap array that represents the altitude data
 	 * @return converted BufferedImage
 	 */
-	private BufferedImage pathAndAltitudeToBufferedImage(int[][] path, int[][] altitudeMap) {
+	private BufferedImage pathAndAltitudeToBufferedImage(int[][] path, double[][] altitudeMap) {
 		BufferedImage pathImage = FileUtil.mapToImage(altitudeMap);
 		for(int i = 0; i < path.length; i++) {
 			for(int j = 0; j < path[0].length; j++) {
