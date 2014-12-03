@@ -5,10 +5,13 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageFilter;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -17,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import algorithm.MapAnalysis;
 import algorithm.MapUtil.Pair;
@@ -96,7 +100,8 @@ public class TrainTerrain {
 			inputAndOptionsPanel.add(buttonPanel);
 			
 			final JFileChooser fileChooser = new JFileChooser();
-			
+			fileChooser.setAcceptAllFileFilterUsed(false);
+			fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Image files", ImageIO.getReaderFileSuffixes()));
 			
 			final JButton altitudeMapButton = new JButton("Altitude Map");
 			buttonPanel.add(altitudeMapButton);
