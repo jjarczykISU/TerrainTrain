@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -15,6 +16,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import algorithm.MapAnalysis;
 import algorithm.MapUtil;
@@ -35,6 +37,8 @@ public class TrainTerrainPanel extends JPanel {
 	private int[][] altitudeLayer;
 	private int[][] waterLayer;
 	
+	private static final long serialVersionUID = 1L;
+
 	public TrainTerrainPanel() {
 		super(new BorderLayout());
 		
@@ -79,7 +83,8 @@ public class TrainTerrainPanel extends JPanel {
 		inputAndOptionsPanel.add(buttonPanel);
 		
 		final JFileChooser fileChooser = new JFileChooser();
-		
+		fileChooser.setAcceptAllFileFilterUsed(false);
+		fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Image files", ImageIO.getReaderFileSuffixes()));
 		
 		final JButton altitudeMapButton = new JButton("Altitude Map");
 		buttonPanel.add(altitudeMapButton);
@@ -199,6 +204,12 @@ public class TrainTerrainPanel extends JPanel {
 		return inverted;
 	}
 	
+	private void clearAnalysisImages() {
+		discreteMap.setIcon(new ImageIcon());
+		accumulatedMap.setIcon(new ImageIcon());
+		pathMap.setIcon(new ImageIcon());
+	}
+	
 	private BufferedImage discreteCostMapToBufferedImage(double[][] discreteCost) {
 		int[][] modifiedMap = new int[discreteCost.length][discreteCost[0].length];
 		double max = 1;
@@ -232,19 +243,14 @@ public class TrainTerrainPanel extends JPanel {
 	}
 	
 	private BufferedImage pathAndAltitudeToBufferedImage(int[][] path, int[][] altitudeMap) {
-		int[][] modifiedMap = new int[altitudeMap.length][altitudeMap[0].length];
+		BufferedImage pathImage = FileUtil.mapToImage(altitudeMap);
 		for(int i = 0; i < path.length; i++) {
 			for(int j = 0; j < path[0].length; j++) {
-				if(path[i][j] == 1) modifiedMap[i][j] = 0;
-				else modifiedMap[i][j] = altitudeMap[i][j];
+				if(path[i][j] == 1) {
+					pathImage.setRGB(i, j, 255<<16); //red
+				}
 			}
 		}
-		return (BufferedImage) FileUtil.mapToImage(modifiedMap);
-	}
-	
-	private void clearAnalysisImages() {
-		discreteMap.setIcon(new ImageIcon());
-		accumulatedMap.setIcon(new ImageIcon());
-		pathMap.setIcon(new ImageIcon());
+		return pathImage;
 	}
 }

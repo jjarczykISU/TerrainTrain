@@ -19,20 +19,19 @@ public class DiscreteCostAnalysis {
 		if(layers == null) {
 			throw new IllegalArgumentException("Null arguments.");
 		}
-		if(layers.get(0) == null) {
-			throw new IllegalArgumentException("Null arguments.");
-		}
 		// Check for mismatching dimensions
-		int width = layers.get(0).length;
-		if(width == 0) throw new IllegalArgumentException("Illegal dimensions for layers.");
-		int height = layers.get(0)[0].length;
-		if(height == 0) throw new IllegalArgumentException("Illegal dimensions for layers.");
-		for(int i = 1; i < layers.size(); i ++) {
-			if(layers.get(i) == null) {
-				throw new IllegalArgumentException("Null arguments.");
-			}
-			if(layers.get(i).length != width || layers.get(i)[0].length != height) {
-				throw new IllegalArgumentException("Mismatching layer dimensions.");
+		int width = -1;
+		int height = -1;
+		for(int[][] layer : layers.values()) {
+			if(width == -1 || height == -1) {
+				width = layer.length;
+				if(width == 0) throw new IllegalArgumentException("Illegal dimensions for layers.");
+				height = layer[0].length;
+				if(height == 0) throw new IllegalArgumentException("Illegal dimensions for layers.");
+			} else {
+				if(layer.length != width || layer[0].length != height) {
+					throw new IllegalArgumentException("Mismatching layer dimensions.");
+				}
 			}
 		}
 		// Checks that all layers have a weighting
