@@ -106,10 +106,12 @@ public class TrainTerrainPanel extends JPanel {
 		fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Image files", ImageIO.getReaderFileSuffixes()));
 		
 		// Add buttons
-		final JButton altitudeMapButton = new JButton("Altitude Map");
+		final JButton altitudeMapButton = new JButton("Load Altitude Map");
 		buttonPanel.add(altitudeMapButton);
-		final JButton waterMapButton = new JButton("Water Map");
+		final JButton waterMapButton = new JButton("Load Water Map");
 		buttonPanel.add(waterMapButton);
+		final JButton waterLevelButton = new JButton("Set Water Level");
+		buttonPanel.add(waterLevelButton);
 		final JButton analysisButton = new JButton("Perform Analysis");
 		buttonPanel.add(analysisButton);
 		final JButton resetButton = new JButton("Reset");
@@ -127,7 +129,6 @@ public class TrainTerrainPanel extends JPanel {
 					try {
 						altitudeImage = ImageIO.read(fileChooser.getSelectedFile());
 						altitudeLayer = FileUtil.imageToMap(altitudeImage);
-						altitudeMap.setIcon(new ImageIcon(altitudeImage));
 					} catch (IOException e) {
 						altitudeImage = null;
 						altitudeLayer = null;
@@ -148,7 +149,6 @@ public class TrainTerrainPanel extends JPanel {
 					try {
 						waterImage = ImageIO.read(fileChooser.getSelectedFile());
 						waterLayer = FileUtil.imageToMap(waterImage);
-						waterMap.setIcon(new ImageIcon(waterImage));
 					} catch (IOException e) {
 						waterImage = null;
 						waterLayer = null;
@@ -157,7 +157,56 @@ public class TrainTerrainPanel extends JPanel {
 				}
 
 			}
-		});	
+		});
+		waterLevelButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(altitudeLayer == null) { // If an altitude map has not been set
+					JOptionPane.showMessageDialog(null, "Altitude Map is not Set");
+					return;
+				}
+				
+				//TODO query user for water level
+				String input = JOptionPane.showInputDialog("Altitude of water level?");
+				double level;
+				if (input != null) try {
+					level = Double.valueOf(input);
+				} catch (NumberFormatException e) {
+					//bad input
+					return; //ignore
+				} else {
+					return; //cancelled
+				}
+				//double level = 64;
+				
+				//generate water map
+				if (level > 0) {
+					//copy altitude data
+					waterLayer = FileUtil.imageToMap(altitudeImage);
+					//generate water map
+					int width = waterLayer.length;
+					int height = waterLayer[0].length;
+					for(int i = 0; i < width; i++) {
+						for(int j = 0; j < height; j ++) {
+							int alt = waterLayer[i][j];
+							if (alt < level) {
+								waterLayer[i][j] = 255 - (int) ((level - alt) + 128.0); //water depth + flat distance rate
+								//waterLayer[i][j] = 0; //avoid water like a cat
+							} else {
+								waterLayer[i][j] = 255;
+							}
+							
+						}
+					}
+					//create image
+					waterImage = FileUtil.mapToImage(waterLayer);
+				} else {
+					waterImage = null;
+					waterLayer = null;
+				}
+				updateImages();
+			}
+		});
 		analysisButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -183,7 +232,7 @@ public class TrainTerrainPanel extends JPanel {
 					//TODO also make sure that each MapType in layers has a weighting (otherwise an exception is thrown in MapAnalysis)
 					Map<MapUtil.MapTypes, Double> weightings = new HashMap<MapUtil.MapTypes, Double>();
 					weightings.put(MapUtil.MapTypes.ALTITUDE, 1.0);
-					weightings.put(MapUtil.MapTypes.WATER, 2.0);
+					weightings.put(MapUtil.MapTypes.WATER, 5.0);
 					
 					// Perform analysis
 					analysis = new MapAnalysis(source, start, layers, weightings);

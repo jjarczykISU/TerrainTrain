@@ -17,7 +17,7 @@ public class TrainTerrain {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// Set intial dimensions of window
-		Dimension minSize = new Dimension(500, 500);
+		Dimension minSize = new Dimension(700, 500);
 		frame.setSize(minSize);
 		frame.setMinimumSize(minSize);
 		frame.pack();
