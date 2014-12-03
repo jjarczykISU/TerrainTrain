@@ -12,7 +12,7 @@ public class FileUtil {
 	 * @return 2D array of the interpreted map
 	 * @throws IOException if there is a problem reading the file
 	 */
-	public static int[][] imageToMap(BufferedImage image) throws IOException {
+	public static int[][] imageToMap(BufferedImage image) {
 		int width = image.getWidth();
 		int height = image.getHeight();
 		

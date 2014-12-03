@@ -6,7 +6,7 @@ import algorithm.MapUtil.Pair;
 
 public class MapAnalysis {	
 	// Cost to traverse a cell 
-	private double COSTDISTANCE = 1;
+	private double COSTDISTANCE = 1.0;
 	
 	public double[][] discreteCost;
 	public double[][] accumulatedCost;
@@ -69,18 +69,46 @@ public class MapAnalysis {
 					nextCell = new Pair<Integer, Integer>(x, y - 1);
 				}
 			}
-			// Left
-			if(x + 1 < accumulatedCost.length && path[x + 1][y] != 1) {
+			// Right
+			if((x + 1 < accumulatedCost.length) && path[x + 1][y] != 1) {
 				if(smallestValue == -1 || accumulatedCost[x + 1][y] < smallestValue) {
 					smallestValue = accumulatedCost[x + 1][y];
 					nextCell = new Pair<Integer, Integer>(x + 1, y);
 				}
 			}
-			// Right
-			if(x - 1 >= 0 && path[x -  1][y] != 1) {
+			// Left
+			if((x - 1 >= 0) && path[x -  1][y] != 1) {
 				if(smallestValue == -1 || accumulatedCost[x - 1][y] < smallestValue) {
 					smallestValue = accumulatedCost[x - 1][y];
 					nextCell = new Pair<Integer, Integer>(x - 1, y);
+				}
+			}
+			// Down-Right
+			if(y + 1 < accumulatedCost[0].length && (x + 1 < accumulatedCost.length) && path[x + 1][y + 1] != 1) {
+				if(smallestValue == -1 || accumulatedCost[x + 1][y + 1] < smallestValue) {
+					smallestValue = accumulatedCost[x + 1][y + 1];
+					nextCell = new Pair<Integer, Integer>(x + 1, y + 1);
+				}
+			}
+			// Down-Left
+			if(y + 1 < accumulatedCost[0].length && (x - 1 >= 0) && path[x - 1][y + 1] != 1) {
+				if(smallestValue == -1 || accumulatedCost[x - 1][y + 1] < smallestValue) {
+					smallestValue = accumulatedCost[x - 1][y + 1];
+					nextCell = new Pair<Integer, Integer>(x - 1, y + 1);
+				}
+			}
+			// Up-Right
+			if(y - 1 >= 0 && (x + 1 < accumulatedCost.length) && path[x + 1][y - 1] != 1) {
+				if(smallestValue == -1 || accumulatedCost[x + 1][y - 1] < smallestValue) {
+					smallestValue = accumulatedCost[x + 1][y - 1];
+					nextCell = new Pair<Integer, Integer>(x + 1, y - 1);
+				}
+			}
+			// Up-Left
+			if(y - 1 >= 0 && (x - 1 >= 0) && path[x - 1][y - 1] != 1) {
+				if(smallestValue == -1 || accumulatedCost[x - 1][y - 1] < smallestValue) {
+					smallestValue = accumulatedCost[x - 1][y - 1];
+					nextCell = new Pair<Integer, Integer>(x - 1, y - 1);
 				}
 			}
 			
