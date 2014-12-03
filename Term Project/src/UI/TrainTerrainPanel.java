@@ -45,6 +45,9 @@ public class TrainTerrainPanel extends JPanel {
 
 	private double[][] altitudeLayer;
 	private double[][] waterLayer;
+	
+	// TODO add ui input and usage in map analysis (so that the altitudes are not always 0-255
+	private double altitudeScale = 1.0;
 
 	public TrainTerrainPanel() {
 		// Set layout of panel to BorderLayout 
@@ -128,7 +131,7 @@ public class TrainTerrainPanel extends JPanel {
 					clearAnalysisImages();
 					try {
 						altitudeImage = ImageIO.read(fileChooser.getSelectedFile());
-						altitudeLayer = FileUtil.imageToMap(altitudeImage);
+						altitudeLayer = invertGraph(FileUtil.imageToMap(altitudeImage)); // Interpreting white as low altitude and black as high altitude
 					} catch (IOException e) {
 						altitudeImage = null;
 						altitudeLayer = null;
@@ -148,7 +151,7 @@ public class TrainTerrainPanel extends JPanel {
 					clearAnalysisImages();
 					try {
 						waterImage = ImageIO.read(fileChooser.getSelectedFile());
-						waterLayer = FileUtil.imageToMap(waterImage);
+						waterLayer = invertGraph(FileUtil.imageToMap(waterImage)); // Interpreting white as no water and black as the deepest water
 					} catch (IOException e) {
 						waterImage = null;
 						waterLayer = null;
@@ -180,25 +183,23 @@ public class TrainTerrainPanel extends JPanel {
 				
 				//generate water map
 				if (level > 0) {
-					//copy altitude data
-					waterLayer = FileUtil.imageToMap(altitudeImage);
 					//generate water map
-					int width = waterLayer.length;
-					int height = waterLayer[0].length;
+					int width = altitudeLayer.length;
+					int height = altitudeLayer[0].length;
+					waterLayer = new double[width][height];
 					for(int i = 0; i < width; i++) {
 						for(int j = 0; j < height; j ++) {
-							double altitude = waterLayer[i][j];
+							double altitude = altitudeLayer[i][j]*altitudeScale;
 							if (altitude < level) {
-								waterLayer[i][j] = 255 - (int) ((level - altitude) + 128.0); //water depth + flat distance rate
-								//waterLayer[i][j] = 0; //avoid water like a cat
+								waterLayer[i][j] = (level - altitude) + 128.0; //water depth + flat distance rate //TODO why do we add 128.0 here?
 							} else {
-								waterLayer[i][j] = 255;
+								waterLayer[i][j] = 0;
 							}
 							
 						}
 					}
 					//create image
-					waterImage = FileUtil.mapToImage(waterLayer);
+					waterImage = FileUtil.mapToImage(invertGraph(waterLayer));
 				} else {
 					waterImage = null;
 					waterLayer = null;
@@ -216,9 +217,9 @@ public class TrainTerrainPanel extends JPanel {
 				} else {
 					// Set mapping of map type to map data
 					Map<MapUtil.MapTypes, double[][]> layers = new HashMap<MapUtil.MapTypes, double[][]>();
-					layers.put(MapUtil.MapTypes.ALTITUDE, invertGraph(altitudeLayer));
+					layers.put(MapUtil.MapTypes.ALTITUDE, altitudeLayer);
 					if(waterLayer != null) {
-						layers.put(MapUtil.MapTypes.WATER, invertGraph(waterLayer));
+						layers.put(MapUtil.MapTypes.WATER, waterLayer);
 					}
 					
 					// Set source for path
