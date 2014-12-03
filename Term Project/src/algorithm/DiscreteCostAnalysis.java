@@ -74,8 +74,6 @@ public class DiscreteCostAnalysis {
 			}
 		}
 		
-		// TODO path straightening preference adjustment http://www.innovativegis.com/basis/mapanalysis/topic19/topic19.htm
-		
 		return discreteCost;
 	}
 	

@@ -45,7 +45,7 @@ public class AccumulatedCostAnalysis {
 	 * @returns 2D array representation of accumulated cost map
 	 * @throws IllegalArgumentException if arguments are null or the dimensions of discreteCost and source are not the same (assumes that all columns have the same length) or dimensions are 0
 	 */ 
-	public static double[][] generateAccumulatedCostMap( int[][] source, double[][] discreteCost, int costDistance)
+	public static double[][] generateAccumulatedCostMap( int[][] source, double[][] discreteCost, double costDistance)
 	{
 		if(discreteCost == null || source == null) {
 			throw new IllegalArgumentException("Null arguments.");

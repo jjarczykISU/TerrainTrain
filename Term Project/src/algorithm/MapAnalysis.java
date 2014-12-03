@@ -6,7 +6,7 @@ import algorithm.MapUtil.Pair;
 
 public class MapAnalysis {	
 	// Cost to traverse a cell 
-	private int COSTDISTANCE = 1;
+	private double COSTDISTANCE = 1;
 	
 	public double[][] discreteCost;
 	public double[][] accumulatedCost;
