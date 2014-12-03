@@ -62,7 +62,7 @@ public class DiscreteCostAnalysis {
 		double[][] discreteCost = new double[width][height]; 
 		for(int i = 0; i < width; i ++) {
 			for(int j = 0; j < height; j ++) {
-				if(withWater && waterLayerCost[i][j] != 1) { // if there is water in this cell
+				if(withWater && waterLayerCost[i][j] != 0) { // if there is water in this cell
 					discreteCost[i][j] = waterLayerCost[i][j];
 				} else {
 					for(MapUtil.MapTypes layer : layerCosts.keySet()) {
