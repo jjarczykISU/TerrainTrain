@@ -37,7 +37,7 @@ public class AccumulatedCostAnalysis {
 	    }
 	}
 
-	/*
+	/**
 	 * Calculates the accumulated cost map
 	 * @param source 2D array representing the source to which the least cost path from each cell is calculated, where the source cells are given a non-zero value and all others cells are 0.
 	 * @param discreteCost 2D representation of discrete cost map 
