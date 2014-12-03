@@ -1,9 +1,6 @@
 package fileUtils;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 
@@ -19,15 +16,14 @@ public class FileUtil {
 	 */
 	public static int[][] imageToMap(File file) throws IOException {
 		BufferedImage image = ImageIO.read(file);
-		Raster raster = image.getData();
 		
-		int width = raster.getWidth();
-		int height = raster.getHeight();
+		int width = image.getWidth();
+		int height = image.getHeight();
 		
 		int map[][] = new int[width][height];
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j ++) {
-				map[i][j] = raster.getSample(i, j, 0);
+				map[i][j] = image.getRGB(i, j) & 255; //mask to only sample first channel
 			}
 		}
 		
@@ -39,17 +35,17 @@ public class FileUtil {
 	 * @param map array to be converted to image
 	 * @return grayscale image interpreted from array
 	 */
-	public static Image mapToImage(int[][] map) {
+	public static BufferedImage mapToImage(int[][] map) {
 		int width = map.length;
 		int height = map[0].length;
 		
-		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-		WritableRaster raster = image.getRaster();
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
 		
 		for(int i = 0; i < width; i++) {
 			for(int j = 0; j < height; j ++) {
 				int data = map[i][j];
-				raster.setSample(i, j, 0, data);
+				int rgb = (data<<16) | (data<<8) | (data); //set all color channels to same value for grayscale image
+				image.setRGB(i, j, rgb);
 			}
 		}
 		

@@ -50,6 +50,8 @@ public class TrainTerrain {
 	
 	private static class TrainTerrainPanel extends JPanel {
 		
+		private static final long serialVersionUID = 1L;
+
 		public TrainTerrainPanel() {
 			super(new BorderLayout());
 			
@@ -244,14 +246,15 @@ public class TrainTerrain {
 		}
 		
 		private BufferedImage pathAndAltitudeToBufferedImage(int[][] path, int[][] altitudeMap) {
-			int[][] modifiedMap = new int[altitudeMap.length][altitudeMap[0].length];
+			BufferedImage pathImage = FileUtil.mapToImage(altitudeMap);
 			for(int i = 0; i < path.length; i++) {
 				for(int j = 0; j < path[0].length; j++) {
-					if(path[i][j] == 1) modifiedMap[i][j] = 0;
-					else modifiedMap[i][j] = altitudeMap[i][j];
+					if(path[i][j] == 1) {
+						pathImage.setRGB(i, j, 255<<16); //red
+					}
 				}
 			}
-			return (BufferedImage) FileUtil.mapToImage(modifiedMap);
+			return pathImage;
 		}
 	}
 }
