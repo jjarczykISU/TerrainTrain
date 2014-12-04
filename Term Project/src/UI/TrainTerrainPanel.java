@@ -1,6 +1,7 @@
 package UI;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -489,6 +490,29 @@ public class TrainTerrainPanel extends JPanel {
 			}
 		}
 		return (BufferedImage) FileUtil.mapToImage(modifiedMap);
+	}
+	
+	/**
+	 * Converts 2D array to a color BufferedImage where high values are red, medium are yellow and low are green
+	 * @param dataMap 2D array to be converted to BufferedImage
+	 * @return converted BufferedImage
+	 */
+	private BufferedImage mapToBufferedImageColor(double[][] dataMap) {
+		BufferedImage colorImage = FileUtil.mapToImage(invertGraph(dataMap));
+		double max = 1;
+		for(int i = 0; i < dataMap.length; i++) {
+			for(int j = 0; j < dataMap[0].length; j++) {
+				if(dataMap[i][j] > max) max = dataMap[i][j]; 
+			}
+		}
+		for(int i = 0; i < dataMap.length; i++) {
+			for(int j = 0; j < dataMap[0].length; j++) {
+				int scaledValue = (int)(dataMap[i][j]*altitudeScale*255/max);
+				Color color = new Color(Math.min(255, (int)(255*((scaledValue)/127.0))), Math.min(255, 255 - (int)(255*((scaledValue - 128)/128.0))), 0);
+				colorImage.setRGB(i, j, color.getRGB());
+			}
+		}
+		return colorImage;
 	}
 
 	/**
