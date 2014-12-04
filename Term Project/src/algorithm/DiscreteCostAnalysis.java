@@ -9,10 +9,12 @@ public class DiscreteCostAnalysis {
 	/**
 	 * Calculates the discrete cost map given a list of of map layers
 	 * @param layers mapping MapTypes to 2D arrays representing the map data to be analyzed
+	 * @param cellSize dimensions of cell in meters (length/width of cell square)
+	 * @param altitudeScale scale factor for altitude
 	 * @param weightings mapping of MapTypes to a double weighting
 	 * @throws IllegalArgumentException
 	 */
-	public static double[][] generateDiscreteCostMap(Map<MapUtil.MapTypes, double[][]> layers, Map<MapUtil.MapTypes, Double> weightings) {
+	public static double[][] generateDiscreteCostMap(Map<MapUtil.MapTypes, double[][]> layers, double cellSize, double altitudeScale, Map<MapUtil.MapTypes, Double> weightings) {
 		
 		// Check that arguments are valid
 		// Check for null arguments
@@ -47,10 +49,10 @@ public class DiscreteCostAnalysis {
 		for(MapUtil.MapTypes layer : layers.keySet()) {
 			switch (layer) {
 			case ALTITUDE:
-				layerCosts.put(layer, altitudeLayerCost(layers.get(layer), MapUtil.CELLSIZE));
+				layerCosts.put(layer, altitudeLayerCost(layers.get(layer), cellSize, altitudeScale));
 				break;
 			case WATER:
-				layerCosts.put(layer, waterLayerCost(layers.get(layer)));
+				layerCosts.put(layer, waterLayerCost(layers.get(layer), altitudeScale));
 			default: // do nothing unimplemented map type
 				break;
 			}
@@ -59,11 +61,12 @@ public class DiscreteCostAnalysis {
 		// Using weightings to combine map layers into discreteCost map (with special logic for water)
 		boolean withWater = layerCosts.containsKey(MapUtil.MapTypes.WATER);
 		double[][] waterLayerCost = (withWater) ? layerCosts.get(MapUtil.MapTypes.WATER) : null;
+		double waterLayerWeighting = (withWater) ? weightings.get(MapUtil.MapTypes.WATER) : 0.0;
 		double[][] discreteCost = new double[width][height]; 
 		for(int i = 0; i < width; i ++) {
 			for(int j = 0; j < height; j ++) {
 				if(withWater && waterLayerCost[i][j] != 0) { // if there is water in this cell
-					discreteCost[i][j] = waterLayerCost[i][j];
+					discreteCost[i][j] = waterLayerWeighting*waterLayerCost[i][j]*(layerCosts.size() - 1); // weighting * discreteCost * number of layers included in land regions
 				} else {
 					for(MapUtil.MapTypes layer : layerCosts.keySet()) {
 						if(layer != MapUtil.MapTypes.WATER) {
@@ -80,15 +83,21 @@ public class DiscreteCostAnalysis {
 	/**
 	 * Calculates the discrete cost map for the water layer (interprets values as the depth of the water)
 	 * (1 most preferred, 9 least preferred)
-	 * @param waterLater 2D array representing the water bodies on the map
+	 * @param waterLayer 2D array representing the water bodies on the map
+	 * @param altitudeScale scale factor for altitude
 	 * @return discrete cost map for water bodies
 	 */
-	private static double[][] waterLayerCost(double[][] waterLater) {
-		double[][] cost = new double[waterLater.length][waterLater[0].length];
+	private static double[][] waterLayerCost(double[][] waterLayer, double altitudeScale) {
+		double[][] cost = new double[waterLayer.length][waterLayer[0].length];
 		
 		for(int i = 0; i < cost.length; i ++) {
 			for(int j = 0; j < cost[0].length; j ++) {
-				if(waterLater[i][j] != 0) cost[i][j] = waterLater[i][j]*9/255;
+				if(waterLayer[i][j] != 0) {
+					if(waterLayer[i][j]*altitudeScale > 200) // if the support for the bridge would be greater that 200 meters
+						cost[i][j] = 9;
+					else
+						cost[i][j] = 2 + waterLayer[i][j]*altitudeScale/200*6; // base cost penalty for building bridge + additional cost for depth of supports
+				}
 				else cost[i][j] = 0;
 			}
 		}
@@ -100,10 +109,11 @@ public class DiscreteCostAnalysis {
 	 * Calculates the discrete cost map for the altitude layer
 	 * (1 most preferred, 9 least preferred)
 	 * @param altitudeLayer 2D array representing the altitudes of the map
-	 * @param cellSize number of units representing the length/width of a single cell
+	 * @param cellSize dimensions of cell in meters (length/width of cell square)
+	 * @param altitudeScale scale factor for altitude
 	 * @return discrete cost map for altitude
 	 */
-	private static double[][] altitudeLayerCost(double[][] altitudeLayer, double cellSize) 
+	private static double[][] altitudeLayerCost(double[][] altitudeLayer, double cellSize, double altitudeScale) 
 	{
 		double[][] cost = new double[altitudeLayer.length][altitudeLayer[0].length];
 		
@@ -120,7 +130,7 @@ public class DiscreteCostAnalysis {
 				// Left
 				if(i - 1 >= 0) neighbors.add(altitudeLayer[i - 1][j]);
 				
-				cost[i][j] = slopePreference(altitudeLayer[i][j], neighbors, cellSize);				
+				cost[i][j] = slopePreference(altitudeLayer[i][j], neighbors, cellSize, altitudeScale);				
 			}
 		}
 		
@@ -132,13 +142,14 @@ public class DiscreteCostAnalysis {
 	 * 1 -> <15 degrees and >-50 degrees
 	 * 2 -> <30 degrees and >-50 degrees
 	 * 3 -> <45 degrees and >-50 degrees
-	 * 6 -> <50 degrees and >-50 degrees
+	 * 4 -> <50 degrees and >-50 degrees
 	 * 9 -> >60 degrees or <=-50 degrees
-	 * @param cellSize dimension of cell
+	 * @param cellSize dimension of cell in meters
+	 * @param altitudeScale scale factor for altitude
 	 * @return the preference of the slope of the cell given the neighboring cells
 	 * @throws IllegalArgumentException neighbors is null or if the number of neighbors is 1 or less
 	 */
-	private static int slopePreference(double altitudeLayer, ArrayList<Double> neighbors, double cellSize) {
+	private static int slopePreference(double altitudeLayer, ArrayList<Double> neighbors, double cellSize, double altitudeScale) {
 		if(neighbors == null || neighbors.size() <= 1) {
 			throw new IllegalArgumentException();
 		}
@@ -146,8 +157,8 @@ public class DiscreteCostAnalysis {
 		double smallestSlope = Integer.MAX_VALUE;
 
 		for(Double alt : neighbors) {
-			double calcSlope = altitudeLayer - alt;
-			calcSlope /= (cellSize);
+			double altDiff = (altitudeLayer - alt)*altitudeScale;
+			double calcSlope = altDiff/cellSize;
 			calcSlope = Math.toDegrees(Math.atan(calcSlope));			
 			
 			if(calcSlope > greatestSlope) greatestSlope = calcSlope;
@@ -163,7 +174,7 @@ public class DiscreteCostAnalysis {
 		} else if(greatestSlope < 45 && smallestSlope >= -50){
 			preference = 3;
 		} else if(greatestSlope < 50){
-			preference = 6;
+			preference = 4;
 		}
 		
 		return preference;

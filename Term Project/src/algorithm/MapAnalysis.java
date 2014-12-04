@@ -4,10 +4,7 @@ import java.util.Map;
 
 import algorithm.MapUtil.Pair;
 
-public class MapAnalysis {	
-	// Cost to traverse a cell 
-	private double COSTDISTANCE = 1.0;
-	
+public class MapAnalysis {		
 	public double[][] discreteCost;
 	public double[][] accumulatedCost;
 	public int[][] path;
@@ -17,14 +14,17 @@ public class MapAnalysis {
 	 * @param source ending area for the path represented as a 2D array where a non-zero represents a potential ending area
 	 * @param start starting point for the path
 	 * @param layers mapping of a map type to the map information
+	 * @param cellSize dimensions of cell in meters (length/width of cell square)
+	 * @param altitudeScale scale factor for altitude
+	 * @param costDistance cost to traverse cell
 	 * @param weightings mapping of a map type to a weighting
 	 */
-	public MapAnalysis(int[][] source, Pair<Integer, Integer> start, Map<MapUtil.MapTypes, double[][]> layers, Map<MapUtil.MapTypes, Double> weightings) {	
+	public MapAnalysis(int[][] source, Pair<Integer, Integer> start, Map<MapUtil.MapTypes, double[][]> layers, double cellSize, double altitudeScale, double costDistance, Map<MapUtil.MapTypes, Double> weightings) {	
 		// Discrete cost analysis
-		discreteCost =  DiscreteCostAnalysis.generateDiscreteCostMap(layers, weightings);
+		discreteCost =  DiscreteCostAnalysis.generateDiscreteCostMap(layers, cellSize, altitudeScale, weightings);
 		
 		// Accumulated cost analysis
-		accumulatedCost = AccumulatedCostAnalysis.generateAccumulatedCostMap(source, discreteCost, COSTDISTANCE);
+		accumulatedCost = AccumulatedCostAnalysis.generateAccumulatedCostMap(source, discreteCost, costDistance);
 		
 		// Steepest Cost Path analysis
 		path = steepestCostPath(start, accumulatedCost);

@@ -46,7 +46,13 @@ public class TrainTerrainPanel extends JPanel {
 	private double[][] altitudeLayer;
 	private double[][] waterLayer;
 	
-	// TODO add ui input and usage in map analysis (so that the altitudes are not always 0-255
+	// TODO add ui input	
+	// Dimensions of a cell in meters
+	private double cellSize = 1.0;
+	
+	// TODO add ui input
+	// Scale of map altitudes
+	// Calculated by: (max - min)/255.0, where max is the altitude of a black cell in meters and min is the altitude of a white cell in meters
 	private double altitudeScale = 1.0;
 
 	public TrainTerrainPanel() {
@@ -189,9 +195,9 @@ public class TrainTerrainPanel extends JPanel {
 					waterLayer = new double[width][height];
 					for(int i = 0; i < width; i++) {
 						for(int j = 0; j < height; j ++) {
-							double altitude = altitudeLayer[i][j]*altitudeScale;
+							double altitude = altitudeLayer[i][j]*cellSize;
 							if (altitude < level) {
-								waterLayer[i][j] = (level - altitude) + 128.0; //water depth + flat distance rate //TODO why do we add 128.0 here?
+								waterLayer[i][j] = level - altitude;
 							} else {
 								waterLayer[i][j] = 0;
 							}
@@ -229,13 +235,20 @@ public class TrainTerrainPanel extends JPanel {
 					Pair<Integer, Integer> start = new Pair<Integer, Integer>(0, 0);
 					
 					//TODO modify this to be updated in the UI
-					//TODO also make sure that each MapType in layers has a weighting (otherwise an exception is thrown in MapAnalysis)
 					Map<MapUtil.MapTypes, Double> weightings = new HashMap<MapUtil.MapTypes, Double>();
 					weightings.put(MapUtil.MapTypes.ALTITUDE, 1.0);
 					weightings.put(MapUtil.MapTypes.WATER, 5.0);
 					
+					// TODO remove if this check is handled in the UI with default values
+					for(MapUtil.MapTypes layer : layers.keySet()) {
+						if(!weightings.containsKey(layer)) weightings.put(layer, 1.0);
+					}
+					
+					//TOD add UI control for this
+					double costDistance = 1.0;
+					
 					// Perform analysis
-					analysis = new MapAnalysis(source, start, layers, weightings);
+					analysis = new MapAnalysis(source, start, layers, cellSize, altitudeScale, costDistance, weightings);
 					
 					// Update Images
 					discreteImage = mapToBufferedImage(analysis.discreteCost);
