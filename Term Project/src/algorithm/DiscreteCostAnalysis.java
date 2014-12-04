@@ -61,6 +61,9 @@ public class DiscreteCostAnalysis {
 			case ROADS:
 				layerCosts.put(layer, roadsLayerCost(layers.get(layer), cellSize));
 				break;
+			case HOUSINGDENSITY:
+				layerCosts.put(layer, housingDensityLayerCost(layers.get(layer)));
+				break;
 			default: // do nothing unimplemented map type
 				break;
 			}
@@ -82,6 +85,24 @@ public class DiscreteCostAnalysis {
 		}
 		
 		return discreteCost;
+	}
+	
+	/**
+	 *  Calculates the discrete cost map for the housing density layer (interprets 0 as low housing density up to 255 for high housing density
+	 * (1 most preferred, 9 least preferred)
+	 * @param housingLayer 2D array representing the housing densities
+	 * @return discrete cost map for housing density
+	 */
+	private static double[][] housingDensityLayerCost(double[][] housingLayer) {
+		double[][] cost = new double[housingLayer.length][housingLayer[0].length];
+		
+		for(int i = 0; i < cost.length; i ++) {
+			for(int j = 0; j < cost[0].length; j ++) {
+				cost[i][j] = 1 + housingLayer[i][j]*8/255;
+			}
+		}
+		
+		return cost;
 	}
 	
 	/**
