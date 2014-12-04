@@ -19,6 +19,7 @@ import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -46,6 +47,8 @@ public class TrainTerrainPanel extends JPanel {
 	private JLabel discreteMap;
 	private JLabel accumulatedMap;
 	private JLabel pathMap;
+	
+	JCheckBox doSave;
 	
 	private BufferedImage altitudeImage, waterImage, discreteImage, accumulatedImage, pathImage;
 
@@ -296,6 +299,15 @@ public class TrainTerrainPanel extends JPanel {
 		final JButton resetButton = new JButton("Reset");
 		buttonPanel.add(resetButton);
 		
+		// Add checkbox
+		JPanel doSavePanel = new JPanel();
+		buttonPanel.add(doSavePanel);
+		JLabel doSaveLabel = new JLabel("save to file:");
+		doSave = new JCheckBox();
+		doSavePanel.add(doSaveLabel);
+		doSavePanel.add(doSave);
+		
+		
 		// Add ActionListeners for buttons
 		altitudeMapButton.addActionListener(new ActionListener() {
 			@Override
@@ -416,15 +428,17 @@ public class TrainTerrainPanel extends JPanel {
 					pathImage = pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer);
 					updateImages();
 					
-					// Save analysis data
-					HashMap<String, BufferedImage> analysisData = new HashMap<String, BufferedImage>();
-					analysisData.put("discreteMap", discreteImage);
-					analysisData.put("accumulatedMap", accumulatedImage);
-					analysisData.put("pathMap", pathImage);
-					// Add input files to be saved as well
-					analysisData.put("altitudeMap", altitudeImage);
-					if(waterLayer != null) analysisData.put("waterMap", waterImage);
-					saveAnalysisData(analysisData);
+					// Save analysis data if doSave is checked
+					if(doSave.isSelected()) {
+						HashMap<String, BufferedImage> analysisData = new HashMap<String, BufferedImage>();
+						analysisData.put("discreteMap", discreteImage);
+						analysisData.put("accumulatedMap", accumulatedImage);
+						analysisData.put("pathMap", pathImage);
+						// Add input files to be saved as well
+						analysisData.put("altitudeMap", altitudeImage);
+						if(waterLayer != null) analysisData.put("waterMap", waterImage);
+						saveAnalysisData(analysisData);
+					}
 				}
 			}
 		});		
