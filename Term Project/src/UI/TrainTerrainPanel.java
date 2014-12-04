@@ -44,18 +44,22 @@ public class TrainTerrainPanel extends JPanel {
 	
 	private JLabel altitudeMap;
 	private JLabel waterMap;
+	private JLabel roadsMap;
+	private JLabel housingMap;
 	private JLabel discreteMap;
 	private JLabel accumulatedMap;
 	private JLabel pathMap;
 	
 	JCheckBox doSave;
 	
-	private BufferedImage altitudeImage, waterImage, discreteImage, accumulatedImage, pathImage;
+	private BufferedImage altitudeImage, waterImage, roadsImage, housingImage, discreteImage, accumulatedImage, pathImage;
 
 	private MapAnalysis analysis;
 
 	private double[][] altitudeLayer;
 	private double[][] waterLayer;
+	private double[][] roadsLayer;
+	private double[][] housingLayer;
 	
 	// Dimensions of a cell in meters
 	private double cellSize;
@@ -91,6 +95,20 @@ public class TrainTerrainPanel extends JPanel {
 		waterMap.setVerticalAlignment(JLabel.CENTER);
 		waterPanel.add(waterMap);
 		tabbedPane.addTab("Water Map", null, waterPanel, null);
+		
+		JPanel roadsPanel = new JPanel(new BorderLayout());
+		roadsMap = new JLabel();
+		roadsMap.setHorizontalAlignment(JLabel.CENTER);
+		roadsMap.setVerticalAlignment(JLabel.CENTER);
+		roadsPanel.add(roadsMap);
+		tabbedPane.addTab("Roads Map", null, roadsPanel, null);
+		
+		JPanel housingPanel = new JPanel(new BorderLayout());
+		housingMap = new JLabel();
+		housingMap.setHorizontalAlignment(JLabel.CENTER);
+		housingMap.setVerticalAlignment(JLabel.CENTER);
+		housingPanel.add(housingMap);
+		tabbedPane.addTab("Housing Density Map", null, housingPanel, null);
 		
 		JPanel discretePanel = new JPanel(new BorderLayout());
 		discreteMap = new JLabel();
@@ -294,14 +312,22 @@ public class TrainTerrainPanel extends JPanel {
 		buttonPanel.add(waterMapButton);
 		final JButton waterLevelButton = new JButton("Set Water Level");
 		buttonPanel.add(waterLevelButton);
+		final JButton roadsMapButton = new JButton("Load Roads Map");
+		buttonPanel.add(roadsMapButton);
+		final JButton housingMapButton = new JButton("Load Housing Density Map ");
+		buttonPanel.add(housingMapButton);
+		
+		JPanel analysisPanel =  new JPanel();
+		inputAndOptionsPanel.add(analysisPanel);
+		
 		final JButton analysisButton = new JButton("Perform Analysis");
-		buttonPanel.add(analysisButton);
+		analysisPanel.add(analysisButton);
 		final JButton resetButton = new JButton("Reset");
-		buttonPanel.add(resetButton);
+		analysisPanel.add(resetButton);
 		
 		// Add checkbox
 		JPanel doSavePanel = new JPanel();
-		buttonPanel.add(doSavePanel);
+		analysisPanel.add(doSavePanel);
 		JLabel doSaveLabel = new JLabel("save to file:");
 		doSave = new JCheckBox();
 		doSavePanel.add(doSaveLabel);
@@ -324,7 +350,9 @@ public class TrainTerrainPanel extends JPanel {
 						altitudeImage = null;
 						altitudeLayer = null;
 					}
-					updateImages();					
+					updateImages();	
+					// Change selected tab
+					tabbedPane.setSelectedIndex(0);
 				}
 
 			}
@@ -345,6 +373,8 @@ public class TrainTerrainPanel extends JPanel {
 						waterLayer = null;
 					}
 					updateImages();
+					// Change selected tab
+					tabbedPane.setSelectedIndex(1);
 				}
 
 			}
@@ -393,6 +423,52 @@ public class TrainTerrainPanel extends JPanel {
 					waterLayer = null;
 				}
 				updateImages();
+				// Change selected tab
+				tabbedPane.setSelectedIndex(1);
+			}
+		});
+		roadsMapButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				int returnVal = fileChooser.showOpenDialog(TrainTerrainPanel.this);
+
+				// If file was chosen, update contents of htmlPane
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					clearAnalysisImages();
+					try {
+						roadsImage = ImageIO.read(fileChooser.getSelectedFile());
+						roadsLayer = invertGraph(FileUtil.imageToMap(roadsImage)); // Interpreting white as no road, otherwise road
+					} catch (IOException e) {
+						roadsImage = null;
+						roadsLayer = null;
+					}
+					updateImages();
+					// Change selected tab
+					tabbedPane.setSelectedIndex(2);
+				}
+
+			}
+		});
+		housingMapButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				int returnVal = fileChooser.showOpenDialog(TrainTerrainPanel.this);
+
+				// If file was chosen, update contents of htmlPane
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					clearAnalysisImages();
+					try {
+						housingImage = ImageIO.read(fileChooser.getSelectedFile());
+						housingLayer = invertGraph(FileUtil.imageToMap(housingImage)); // Interpreting white as no houses and darker as housing density increases
+					} catch (IOException e) {
+						housingImage = null;
+						housingLayer = null;
+					}
+					updateImages();
+					// Change selected tab
+					tabbedPane.setSelectedIndex(3);
+				}
+
 			}
 		});
 		analysisButton.addActionListener(new ActionListener() {
@@ -402,13 +478,17 @@ public class TrainTerrainPanel extends JPanel {
 					JOptionPane.showMessageDialog(null, "Altitude Map is not Set");
 				} else if(waterLayer != null && (altitudeLayer.length != waterLayer.length || altitudeLayer[0].length != waterLayer[0].length)) {
 					JOptionPane.showMessageDialog(null, "Altitude and Water Map dimensions do not match");
+				} else if(roadsLayer != null && (altitudeLayer.length != roadsLayer.length || altitudeLayer[0].length != roadsLayer[0].length)) {
+					JOptionPane.showMessageDialog(null, "Altitude and roads Map dimensions do not match");
+				} else if(housingLayer != null && (altitudeLayer.length != housingLayer.length || altitudeLayer[0].length != housingLayer[0].length)) {
+					JOptionPane.showMessageDialog(null, "Altitude and housing density Map dimensions do not match");
 				} else {
 					// Set mapping of map type to map data
 					Map<MapUtil.MapTypes, double[][]> layers = new HashMap<MapUtil.MapTypes, double[][]>();
 					layers.put(MapUtil.MapTypes.ALTITUDE, altitudeLayer);
-					if(waterLayer != null) {
-						layers.put(MapUtil.MapTypes.WATER, waterLayer);
-					}
+					if(waterLayer != null) layers.put(MapUtil.MapTypes.WATER, waterLayer);
+					if(roadsLayer != null) layers.put(MapUtil.MapTypes.ROADS, roadsLayer);
+					if(housingLayer != null) layers.put(MapUtil.MapTypes.HOUSINGDENSITY, housingLayer);
 					
 					// Set source for path
 					int[][] source = new int[altitudeLayer.length][altitudeLayer[0].length];
@@ -437,6 +517,8 @@ public class TrainTerrainPanel extends JPanel {
 						// Add input files to be saved as well
 						analysisData.put("altitudeMap", altitudeImage);
 						if(waterLayer != null) analysisData.put("waterMap", waterImage);
+						if(roadsLayer != null) analysisData.put("waterMap", roadsImage);
+						if(housingLayer != null) analysisData.put("waterMap", housingImage);
 						saveAnalysisData(analysisData);
 					}
 				}
@@ -449,6 +531,10 @@ public class TrainTerrainPanel extends JPanel {
 				altitudeLayer = null;
 				// Clear waterLayer
 				waterLayer = null;
+				// Clear roadsLayer
+				roadsLayer = null;
+				// Clear housingLayer
+				housingLayer = null;
 				
 				// Clear Images
 				altitudeImage = waterImage = discreteImage = accumulatedImage = pathImage = null;
@@ -507,9 +593,17 @@ public class TrainTerrainPanel extends JPanel {
 		} else if (waterImage != null) {
 			imageWidth = waterImage.getWidth();
 			imageHeight = waterImage.getHeight();
+		} else if (roadsImage != null) {
+			imageWidth = roadsImage.getWidth();
+			imageHeight = roadsImage.getHeight();
+		} else if (housingImage != null) {
+			imageWidth = housingImage.getWidth();
+			imageHeight = housingImage.getHeight();
 		} else {
 			altitudeMap.setIcon(null);
 			waterMap.setIcon(null);
+			roadsMap.setIcon(null);
+			housingMap.setIcon(null);
 			discreteMap.setIcon(null);
 			accumulatedMap.setIcon(null);
 			pathMap.setIcon(null);
@@ -531,6 +625,8 @@ public class TrainTerrainPanel extends JPanel {
 		
 		updateImage(altitudeMap, altitudeImage, width, height);
 		updateImage(waterMap, waterImage, width, height);
+		updateImage(roadsMap, roadsImage, width, height);
+		updateImage(housingMap, housingImage, width, height);
 		updateImage(discreteMap, discreteImage, width, height);
 		updateImage(accumulatedMap, accumulatedImage, width, height);
 		updateImage(pathMap, pathImage, width, height);
