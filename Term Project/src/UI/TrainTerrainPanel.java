@@ -8,7 +8,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -412,6 +415,16 @@ public class TrainTerrainPanel extends JPanel {
 					accumulatedImage = mapToBufferedImage(analysis.accumulatedCost);
 					pathImage = pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer);
 					updateImages();
+					
+					// Save analysis data
+					HashMap<String, BufferedImage> analysisData = new HashMap<String, BufferedImage>();
+					analysisData.put("discreteMap", discreteImage);
+					analysisData.put("accumulatedMap", accumulatedImage);
+					analysisData.put("pathMap", pathImage);
+					// Add input files to be saved as well
+					analysisData.put("altitudeMap", altitudeImage);
+					if(waterLayer != null) analysisData.put("waterMap", waterImage);
+					saveAnalysisData(analysisData);
 				}
 			}
 		});		
@@ -578,4 +591,41 @@ public class TrainTerrainPanel extends JPanel {
 		}
 		return pathImage;
 	}
+	
+	/**
+	 * Saves images from analysis data to separate files inside of a directory names based off of current date and time.
+	 * @param mapImages mapping of names to images for analysis data
+	 */
+	private void saveAnalysisData(Map<String, BufferedImage> mapImages) {
+		// Create folder for data using current date/time
+		Date date = new Date() ;
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss") ;
+		String dirName = dateFormat.format(date); // directory name based on date and time
+		File dir = new File(dirName);
+		try {
+			dir.mkdir();
+			// Save images to files inside of directory
+			for(String mapName : mapImages.keySet()) {
+				File mapFile = new File(dir, mapName + ".png");
+				mapFile.createNewFile();
+				saveImageToFile(mapFile, mapImages.get(mapName));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * Writes image to a file.
+	 * @param file file to be written to
+	 * @param image image to write to file
+	 */
+	private void saveImageToFile(File file, BufferedImage image) {
+		try {
+			ImageIO.write(image, "png", file);
+		} catch(IOException e) {}
+	}
+	
+	
 }
