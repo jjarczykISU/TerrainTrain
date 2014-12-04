@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -19,6 +20,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import algorithm.MapAnalysis;
@@ -46,14 +50,15 @@ public class TrainTerrainPanel extends JPanel {
 	private double[][] altitudeLayer;
 	private double[][] waterLayer;
 	
-	// TODO add ui input	
 	// Dimensions of a cell in meters
-	private double cellSize = 1.0;
+	private double cellSize;
 	
-	// TODO add ui input
 	// Scale of map altitudes
 	// Calculated by: (max - min)/255.0, where max is the altitude of a black cell in meters and min is the altitude of a white cell in meters
-	private double altitudeScale = 1.0;
+	private double altitudeScale;
+	
+	// Weightings for each map type
+	Map<MapUtil.MapTypes, Double> weightings;
 
 	public TrainTerrainPanel() {
 		// Set layout of panel to BorderLayout 
@@ -102,10 +107,125 @@ public class TrainTerrainPanel extends JPanel {
 		
 		// Add Buttons for User Interaction
 		JPanel inputAndOptionsPanel = new JPanel();
+		inputAndOptionsPanel.setLayout(new BoxLayout(inputAndOptionsPanel, BoxLayout.Y_AXIS));
 		add(inputAndOptionsPanel, BorderLayout.PAGE_END);
 		
-		JPanel weightingPanel = new JPanel();
-		inputAndOptionsPanel.add(weightingPanel);
+		JPanel constantsPanel = new JPanel();
+		inputAndOptionsPanel.add(constantsPanel);
+		
+		
+		JPanel weightingsPanel = new JPanel();
+		weightingsPanel.setLayout(new BoxLayout(weightingsPanel, BoxLayout.Y_AXIS));
+		constantsPanel.add(weightingsPanel);
+		
+		// Initialize weightings and add input to ui
+		weightings = new HashMap<MapUtil.MapTypes, Double>();
+		for(final MapUtil.MapTypes type : MapUtil.MapTypes.values()) {
+			weightings.put(type, 1.0);
+			
+			JPanel weightPanel = new JPanel();
+			weightPanel.add(new JLabel(type.name()));
+			final JTextField weightEntry = new JTextField();
+			weightEntry.setText("   1.0   ");
+			weightEntry.getDocument().addDocumentListener(new DocumentListener() {
+			  public void changedUpdate(DocumentEvent e) {
+			    warn();
+			  }
+			  public void removeUpdate(DocumentEvent e) {
+			    warn();
+			  }
+			  public void insertUpdate(DocumentEvent e) {
+			    warn();
+			  }
+
+			  public void warn() {
+				  try {
+			    		double parsed =  Double.parseDouble(weightEntry.getText());
+			    		if(parsed > 0) {
+			    			weightings.put(type, parsed);
+						}
+			    	} catch(Exception ex) {
+			    		JOptionPane.showMessageDialog(null,
+						          "Error: Please enter double bigger than 0", "Error Massage",
+						          JOptionPane.ERROR_MESSAGE);
+			    	}
+			  	}
+			});
+			weightPanel.add(weightEntry);
+			
+			weightingsPanel.add(weightPanel);
+		}
+
+		
+		cellSize = 1.0;
+		
+		JPanel cellSizePanel = new JPanel();
+		cellSizePanel.add(new JLabel("Cell Size (meters)"));
+		final JTextField cellSizeEntry = new JTextField();
+		cellSizeEntry.setText("   1.0   ");
+		cellSizeEntry.getDocument().addDocumentListener(new DocumentListener() {
+		  public void changedUpdate(DocumentEvent e) {
+		    warn();
+		  }
+		  public void removeUpdate(DocumentEvent e) {
+		    warn();
+		  }
+		  public void insertUpdate(DocumentEvent e) {
+		    warn();
+		  }
+
+		  public void warn() {
+			  try {
+		    		double parsed =  Double.parseDouble(cellSizeEntry.getText());
+		    		if(parsed > 0) {
+		    			cellSize = parsed;
+					}
+		    	} catch(Exception ex) {
+		    		JOptionPane.showMessageDialog(null,
+					          "Error: Please enter double bigger than 0", "Error Massage",
+					          JOptionPane.ERROR_MESSAGE);
+		    	}
+		  	}
+		});
+		cellSizePanel.add(cellSizeEntry);
+		
+		constantsPanel.add(cellSizePanel);
+		
+		// Calculated by: (max - min)/255.0, where max is the altitude of a black cell in meters and min is the altitude of a white cell in meters
+		altitudeScale = 1.0;
+		
+		JPanel altitudeScalePanel = new JPanel();
+		altitudeScalePanel.add(new JLabel("Altitude Scale ((max - min)/255.0)"));
+		final JTextField altitudeScaleEntry = new JTextField();
+		altitudeScaleEntry.setText("   1.0   ");
+		altitudeScaleEntry.getDocument().addDocumentListener(new DocumentListener() {
+		  public void changedUpdate(DocumentEvent e) {
+		    warn();
+		  }
+		  public void removeUpdate(DocumentEvent e) {
+		    warn();
+		  }
+		  public void insertUpdate(DocumentEvent e) {
+		    warn();
+		  }
+
+		  public void warn() {
+			  try {
+		    		double parsed =  Double.parseDouble(altitudeScaleEntry.getText());
+		    		if(parsed > 0) {
+		    			altitudeScale = parsed;
+					}
+		    	} catch(Exception ex) {
+		    		JOptionPane.showMessageDialog(null,
+					          "Error: Please enter double bigger than 0", "Error Massage",
+					          JOptionPane.ERROR_MESSAGE);
+		    	}
+		  	}
+		});
+		altitudeScalePanel.add(altitudeScaleEntry);
+		
+		constantsPanel.add(altitudeScalePanel);
+		
 		
 		JPanel buttonPanel =  new JPanel();
 		inputAndOptionsPanel.add(buttonPanel);
@@ -233,16 +353,6 @@ public class TrainTerrainPanel extends JPanel {
 					source[source.length - 1][source[0].length - 1] = 1;
 					// Set start for path
 					Pair<Integer, Integer> start = new Pair<Integer, Integer>(0, 0);
-					
-					//TODO modify this to be updated in the UI
-					Map<MapUtil.MapTypes, Double> weightings = new HashMap<MapUtil.MapTypes, Double>();
-					weightings.put(MapUtil.MapTypes.ALTITUDE, 1.0);
-					weightings.put(MapUtil.MapTypes.WATER, 5.0);
-					
-					// TODO remove if this check is handled in the UI with default values
-					for(MapUtil.MapTypes layer : layers.keySet()) {
-						if(!weightings.containsKey(layer)) weightings.put(layer, 1.0);
-					}
 					
 					//TOD add UI control for this
 					double costDistance = 1.0;
