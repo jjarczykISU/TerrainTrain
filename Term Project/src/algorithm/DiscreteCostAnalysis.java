@@ -2,9 +2,11 @@ package algorithm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import algorithm.MapUtil.MapTypes;
+import algorithm.MapUtil.Pair;
 
 public class DiscreteCostAnalysis {
 
@@ -55,6 +57,10 @@ public class DiscreteCostAnalysis {
 				break;
 			case WATER:
 				layerCosts.put(layer, waterLayerCost(layers.get(layer), altitudeScale));
+				break;
+			case ROADS:
+				layerCosts.put(layer, roadsLayerCost(layers.get(layer), cellSize));
+				break;
 			default: // do nothing unimplemented map type
 				break;
 			}
@@ -76,6 +82,102 @@ public class DiscreteCostAnalysis {
 		}
 		
 		return discreteCost;
+	}
+	
+	/**
+	 * Calculates the discrete cost map for the roads layer (interprets 0 as no road, otherwise road)
+	 * (1 most preferred, 9 least preferred)
+	 * Preference is determined by:
+	 * 9 -> directly on a road (is in the same cell and cellSize is less than 10) or more that 500m from nearest road cell
+	 * 1 -> 1 - 5m away from the nearest road cell or it is on a road cell and cellSize is 10 or greater
+	 * 2 -> 5 - 10m away from the nearest road cell
+	 * 3 -> 10 - 30m away from the nearest road cell
+	 * 4 -> 30 - 50m away from the nearest road cell
+	 * 5 -> 50 - 100m away from the nearest road cell
+	 * 6 -> 100 - 500m away from the nearest road cell
+	 * @param roadsLayer 2D array representing the roads on the map
+	 * @param cellSize dimensions of cell in meters (length/width of cell square)
+	 * @return discrete cost map for roads
+	 */
+	private static double[][] roadsLayerCost(double[][] roadsLayer, double cellSize) {
+		double[][] cost = new double[roadsLayer.length][roadsLayer[0].length];
+		
+		for(int i = 0; i < cost.length; i ++) {
+			for(int j = 0; j < cost[0].length; j ++) {
+				if(roadsLayer[i][j] != 0) { // if there is a road directly on this square
+					 if(cellSize < 10) cost[i][j] = 9;
+					 else cost[i][j] = 1;
+					 continue;					
+				}
+				// search if there is a road  within 5m of this cell
+				double distance = 0;
+				ArrayList<Pair<Integer, Integer>> neighbors = new ArrayList<Pair<Integer, Integer>>();
+				neighbors.add(new Pair<Integer, Integer>(i,j));
+				HashSet<Pair<Integer, Integer>> checked = new HashSet<Pair<Integer, Integer>>();
+				
+				boolean roadFound = false;
+				
+				// Look for within 500 meters of next road cell
+				while(distance < 500 && !roadFound) {
+					ArrayList<Pair<Integer, Integer>> nextNeighbors = new ArrayList<Pair<Integer, Integer>>();
+					// for each toSearch
+					for(Pair<Integer, Integer> n : neighbors) {
+						if(n.getFirst() + 1 < cost.length) {
+							if(n.getSecond() + 1 < cost[0].length) { 
+								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() + 1, n.getSecond() + 1);
+								if(!checked.contains(potentialNext)) {
+									nextNeighbors.add(potentialNext);
+									checked.add(potentialNext);
+								}
+							}
+							if(n.getSecond() - 1 >= 0) {
+								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() + 1, n.getSecond() - 1);
+								if(!checked.contains(potentialNext)) {
+									nextNeighbors.add(potentialNext);
+									checked.add(potentialNext);
+								}
+							}
+						}
+						if(n.getFirst() - 1 >= 0) {
+							if(n.getSecond() + 1 < cost[0].length) { 
+								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() - 1, n.getSecond() + 1);
+								if(!checked.contains(potentialNext)) {
+									nextNeighbors.add(potentialNext);
+									checked.add(potentialNext);
+								}
+							}
+							if(n.getSecond() - 1 >= 0) { 
+								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() - 1, n.getSecond() - 1);
+								if(!checked.contains(potentialNext)) {
+									nextNeighbors.add(potentialNext);
+									checked.add(potentialNext);
+								}
+							}
+						}
+					}
+					neighbors = nextNeighbors;
+					
+					for(Pair<Integer, Integer> n : neighbors) {
+						if(roadsLayer[n.getFirst()][n.getSecond()] != 0) {
+							if(distance < 5) cost[i][j] = 1;
+							else if (distance < 10) cost[i][j] = 2;
+							else if (distance < 30) cost[i][j] = 3;
+							else if (distance < 50) cost[i][j] = 4;
+							else if (distance < 100) cost[i][j] = 5;
+							else cost[i][j] = 6;
+							roadFound = true;
+						}
+					}
+					distance += cellSize;
+				}
+				
+				if(!roadFound) cost[i][j] = 9;
+
+				
+			}
+		}
+		
+		return cost;
 	}
 	
 	/**

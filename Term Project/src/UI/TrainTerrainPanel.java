@@ -168,8 +168,12 @@ public class TrainTerrainPanel extends JPanel {
 			  public void warn() {
 				  try {
 			    		double parsed =  Double.parseDouble(weightEntry.getText());
-			    		if(parsed > 0) {
+			    		if(parsed >= 0) {
 			    			weightings.put(type, parsed);
+						} else {
+							JOptionPane.showMessageDialog(null,
+							          "Error: Please enter a double bigger than 0", "Error Massage",
+							          JOptionPane.ERROR_MESSAGE);
 						}
 			    	} catch(Exception ex) {
 			    		JOptionPane.showMessageDialog(null,
