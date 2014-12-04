@@ -388,7 +388,7 @@ public class TrainTerrainPanel extends JPanel {
 	 * @return converted BufferedImage
 	 */
 	private BufferedImage pathAndAltitudeToBufferedImage(int[][] path, double[][] altitudeMap) {
-		BufferedImage pathImage = FileUtil.mapToImage(altitudeMap);
+		BufferedImage pathImage = FileUtil.mapToImage(invertGraph(altitudeMap));
 		for(int i = 0; i < path.length; i++) {
 			for(int j = 0; j < path[0].length; j++) {
 				if(path[i][j] == 1) {
