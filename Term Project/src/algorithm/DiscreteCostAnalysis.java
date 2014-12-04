@@ -104,6 +104,8 @@ public class DiscreteCostAnalysis {
 		
 		for(int i = 0; i < cost.length; i ++) {
 			for(int j = 0; j < cost[0].length; j ++) {
+				//TODO optimize the algorithm for finding distance to nearest road (up to 500m)
+				
 				if(roadsLayer[i][j] != 0) { // if there is a road directly on this square
 					 if(cellSize < 10) cost[i][j] = 9;
 					 else cost[i][j] = 1;
