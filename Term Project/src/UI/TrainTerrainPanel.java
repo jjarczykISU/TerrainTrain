@@ -57,6 +57,8 @@ public class TrainTerrainPanel extends JPanel {
 	// Scale of map altitudes
 	// Calculated by: (max - min)/255.0, where max is the altitude of a black cell in meters and min is the altitude of a white cell in meters
 	private double altitudeScale;
+	private double min = 0.0;
+	private double max = 255.0;
 	
 	// Weightings for each map type
 	Map<MapUtil.MapTypes, Double> weightings;
@@ -127,7 +129,7 @@ public class TrainTerrainPanel extends JPanel {
 			JPanel weightPanel = new JPanel();
 			weightPanel.add(new JLabel(type.name()));
 			final JTextField weightEntry = new JTextField();
-			weightEntry.setText("   1.0   ");
+			weightEntry.setText("1.0      ");
 			weightEntry.getDocument().addDocumentListener(new DocumentListener() {
 			  public void changedUpdate(DocumentEvent e) {
 			    warn();
@@ -147,7 +149,7 @@ public class TrainTerrainPanel extends JPanel {
 						}
 			    	} catch(Exception ex) {
 			    		JOptionPane.showMessageDialog(null,
-						          "Error: Please enter double bigger than 0", "Error Massage",
+						          "Error: Please enter a double bigger than 0", "Error Massage",
 						          JOptionPane.ERROR_MESSAGE);
 			    	}
 			  	}
@@ -161,9 +163,9 @@ public class TrainTerrainPanel extends JPanel {
 		cellSize = 1.0;
 		
 		JPanel cellSizePanel = new JPanel();
-		cellSizePanel.add(new JLabel("Cell Size (meters)"));
+		cellSizePanel.add(new JLabel("Pixel Size (meters)"));
 		final JTextField cellSizeEntry = new JTextField();
-		cellSizeEntry.setText("   1.0   ");
+		cellSizeEntry.setText("1.0      ");
 		cellSizeEntry.getDocument().addDocumentListener(new DocumentListener() {
 		  public void changedUpdate(DocumentEvent e) {
 		    warn();
@@ -183,7 +185,7 @@ public class TrainTerrainPanel extends JPanel {
 					}
 		    	} catch(Exception ex) {
 		    		JOptionPane.showMessageDialog(null,
-					          "Error: Please enter double bigger than 0", "Error Massage",
+					          "Error: Please enter a double bigger than 0", "Error Massage",
 					          JOptionPane.ERROR_MESSAGE);
 		    	}
 		  	}
@@ -196,10 +198,17 @@ public class TrainTerrainPanel extends JPanel {
 		altitudeScale = 1.0;
 		
 		JPanel altitudeScalePanel = new JPanel();
-		altitudeScalePanel.add(new JLabel("Altitude Scale ((max - min)/255.0)"));
-		final JTextField altitudeScaleEntry = new JTextField();
-		altitudeScaleEntry.setText("   1.0   ");
-		altitudeScaleEntry.getDocument().addDocumentListener(new DocumentListener() {
+		altitudeScalePanel.setLayout(new BoxLayout(altitudeScalePanel, BoxLayout.Y_AXIS));
+		JPanel minPanel = new JPanel();
+		altitudeScalePanel.add(minPanel);
+		minPanel.add(new JLabel("Low (white) in meters:"));
+		JPanel maxPanel = new JPanel();
+		altitudeScalePanel.add(maxPanel);
+		maxPanel.add(new JLabel("High (black) in meters:"));
+		
+		final JTextField minEntry = new JTextField();
+		minEntry.setText("0.0              ");
+		minEntry.getDocument().addDocumentListener(new DocumentListener() {
 		  public void changedUpdate(DocumentEvent e) {
 		    warn();
 		  }
@@ -212,18 +221,55 @@ public class TrainTerrainPanel extends JPanel {
 
 		  public void warn() {
 			  try {
-		    		double parsed =  Double.parseDouble(altitudeScaleEntry.getText());
-		    		if(parsed > 0) {
-		    			altitudeScale = parsed;
+		    		double parsed =  Double.parseDouble(minEntry.getText());
+		    		min = parsed;
+		    		if(max > min && min >= 0.0) {
+		    			altitudeScale = (max - min)/255;
+					} else {
+						JOptionPane.showMessageDialog(null,
+						          "Error: Please enter a positive double smaller than max", "Error Massage",
+						          JOptionPane.ERROR_MESSAGE);
 					}
 		    	} catch(Exception ex) {
 		    		JOptionPane.showMessageDialog(null,
-					          "Error: Please enter double bigger than 0", "Error Massage",
+					          "Error: Please enter a double", "Error Massage",
 					          JOptionPane.ERROR_MESSAGE);
 		    	}
 		  	}
 		});
-		altitudeScalePanel.add(altitudeScaleEntry);
+		minPanel.add(minEntry);
+		final JTextField maxEntry = new JTextField();
+		maxEntry.setText("255.0         ");
+		maxEntry.getDocument().addDocumentListener(new DocumentListener() {
+		  public void changedUpdate(DocumentEvent e) {
+		    warn();
+		  }
+		  public void removeUpdate(DocumentEvent e) {
+		    warn();
+		  }
+		  public void insertUpdate(DocumentEvent e) {
+		    warn();
+		  }
+
+		  public void warn() {
+			  try {
+		    		double parsed =  Double.parseDouble(maxEntry.getText());
+		    		max = parsed;
+		    		if(max > min && min >= 0.0) {
+		    			altitudeScale = (max - min)/255;
+					} else {
+						JOptionPane.showMessageDialog(null,
+						          "Error: Please enter a double bigger than min", "Error Massage",
+						          JOptionPane.ERROR_MESSAGE);
+					}
+		    	} catch(Exception ex) {
+		    		JOptionPane.showMessageDialog(null,
+					          "Error: Please enter a double", "Error Massage",
+					          JOptionPane.ERROR_MESSAGE);
+		    	}
+		  	}
+		});
+		maxPanel.add(maxEntry);
 		
 		constantsPanel.add(altitudeScalePanel);
 		
