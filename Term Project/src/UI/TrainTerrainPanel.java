@@ -229,10 +229,10 @@ public class TrainTerrainPanel extends JPanel {
 		altitudeScalePanel.setLayout(new BoxLayout(altitudeScalePanel, BoxLayout.Y_AXIS));
 		JPanel minPanel = new JPanel();
 		altitudeScalePanel.add(minPanel);
-		minPanel.add(new JLabel("Low (white) in meters:"));
+		minPanel.add(new JLabel("Low (black) in meters:"));
 		JPanel maxPanel = new JPanel();
 		altitudeScalePanel.add(maxPanel);
-		maxPanel.add(new JLabel("High (black) in meters:"));
+		maxPanel.add(new JLabel("High (white) in meters:"));
 		
 		final JTextField minEntry = new JTextField();
 		minEntry.setText("0.0              ");
@@ -349,7 +349,7 @@ public class TrainTerrainPanel extends JPanel {
 					clearAnalysisImages();
 					try {
 						altitudeImage = ImageIO.read(fileChooser.getSelectedFile());
-						altitudeLayer = invertGraph(FileUtil.imageToMap(altitudeImage)); // Interpreting white as low altitude and black as high altitude
+						altitudeLayer = FileUtil.imageToMap(altitudeImage); // Interpreting black as low altitude and white as high altitude
 					} catch (IOException e) {
 						altitudeImage = null;
 						altitudeLayer = null;
@@ -371,7 +371,7 @@ public class TrainTerrainPanel extends JPanel {
 					clearAnalysisImages();
 					try {
 						waterImage = ImageIO.read(fileChooser.getSelectedFile());
-						waterLayer = invertGraph(FileUtil.imageToMap(waterImage)); // Interpreting white as no water and black as the deepest water
+						waterLayer = FileUtil.imageToMap(waterImage); // Interpreting black as no water and white as the deepest water
 					} catch (IOException e) {
 						waterImage = null;
 						waterLayer = null;
@@ -421,7 +421,7 @@ public class TrainTerrainPanel extends JPanel {
 						}
 					}
 					//create image
-					waterImage = FileUtil.mapToImage(invertGraph(waterLayer));
+					waterImage = FileUtil.mapToImage(waterLayer);
 				} else {
 					waterImage = null;
 					waterLayer = null;
@@ -507,8 +507,8 @@ public class TrainTerrainPanel extends JPanel {
 					analysis = new MapAnalysis(source, start, layers, cellSize, altitudeScale, costDistance, weightings);
 					
 					// Update Images
-					discreteImage = mapToBufferedImage(analysis.discreteCost);
-					accumulatedImage = mapToBufferedImage(analysis.accumulatedCost);
+					discreteImage = mapToBufferedImageColor(analysis.discreteCost);
+					accumulatedImage = mapToBufferedImageColor(analysis.accumulatedCost);
 					pathImage = pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer);
 					updateImages();
 					
@@ -697,7 +697,7 @@ public class TrainTerrainPanel extends JPanel {
 	 * @return converted BufferedImage
 	 */
 	private BufferedImage pathAndAltitudeToBufferedImage(int[][] path, double[][] altitudeMap) {
-		BufferedImage pathImage = FileUtil.mapToImage(invertGraph(altitudeMap));
+		BufferedImage pathImage = FileUtil.mapToImage(altitudeMap);
 		for(int i = 0; i < path.length; i++) {
 			for(int j = 0; j < path[0].length; j++) {
 				if(path[i][j] == 1) {
