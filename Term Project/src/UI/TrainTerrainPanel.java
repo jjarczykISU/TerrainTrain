@@ -297,7 +297,7 @@ public class TrainTerrainPanel extends JPanel {
 		
 		constantsPanel.add(altitudeScalePanel);
 		
-		
+
 		JPanel buttonPanel =  new JPanel();
 		inputAndOptionsPanel.add(buttonPanel);
 		
@@ -521,6 +521,8 @@ public class TrainTerrainPanel extends JPanel {
 						if(housingLayer != null) analysisData.put("waterMap", housingImage);
 						saveAnalysisData(analysisData);
 					}
+					// Change selected tab to path tab
+					tabbedPane.setSelectedIndex(6);
 				}
 			}
 		});		
