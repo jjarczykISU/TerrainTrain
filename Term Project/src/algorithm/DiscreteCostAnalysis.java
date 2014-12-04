@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import algorithm.MapUtil.MapTypes;
+
 public class DiscreteCostAnalysis {
 
 	/**
@@ -61,18 +63,14 @@ public class DiscreteCostAnalysis {
 		// Using weightings to combine map layers into discreteCost map (with special logic for water)
 		boolean withWater = layerCosts.containsKey(MapUtil.MapTypes.WATER);
 		double[][] waterLayerCost = (withWater) ? layerCosts.get(MapUtil.MapTypes.WATER) : null;
-		double waterLayerWeighting = (withWater) ? weightings.get(MapUtil.MapTypes.WATER) : 0.0;
 		double[][] discreteCost = new double[width][height]; 
 		for(int i = 0; i < width; i ++) {
 			for(int j = 0; j < height; j ++) {
-				if(withWater && waterLayerCost[i][j] != 0) { // if there is water in this cell
-					discreteCost[i][j] = waterLayerWeighting*waterLayerCost[i][j]*(layerCosts.size() - 1); // weighting * discreteCost * number of layers included in land regions
-				} else {
-					for(MapUtil.MapTypes layer : layerCosts.keySet()) {
-						if(layer != MapUtil.MapTypes.WATER) {
-							discreteCost[i][j] += weightings.get(layer)*layerCosts.get(layer)[i][j];
-						}
+				for(MapUtil.MapTypes layer : layerCosts.keySet()) {
+					if(withWater && waterLayerCost[i][j] != 0) { // if there is water in this cell
+						if(layer == MapTypes.ALTITUDE) continue; // ignore altitude differences layer
 					}
+					discreteCost[i][j] += weightings.get(layer)*layerCosts.get(layer)[i][j];
 				}
 			}
 		}
