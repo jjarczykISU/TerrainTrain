@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -38,8 +39,6 @@ import fileUtils.FileUtil;
 public class TrainTerrainPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
-	//TODO Clean up code
-	
 	private JTabbedPane tabbedPane;
 	
 	private JLabel altitudeMap;
@@ -50,25 +49,41 @@ public class TrainTerrainPanel extends JPanel {
 	private JLabel accumulatedMap;
 	private JLabel pathMap;
 	
+	HashSet<JTextField> weightingEntries;
+	
+	JTextField pixelSizeEntry;
+	
+	JTextField minAltitudeEntry;
+	JTextField maxAltitudeEntry;
+	
 	JCheckBox doSave;
+	
+	boolean noWarning = false;
 	
 	private BufferedImage altitudeImage, waterImage, roadsImage, housingImage, discreteImage, accumulatedImage, pathImage;
 
 	private MapAnalysis analysis;
 
+	// Map layers used in analyis
 	private double[][] altitudeLayer;
 	private double[][] waterLayer;
 	private double[][] roadsLayer;
 	private double[][] housingLayer;
 	
 	// Dimensions of a cell in meters
-	private double cellSize;
+	private double pixelSize;
 	
 	// Scale of map altitudes
-	// Calculated by: (max - min)/255.0, where max is the altitude of a black cell in meters and min is the altitude of a white cell in meters
-	private double altitudeScale;
-	private double min = 0.0;
-	private double max = 255.0;
+	// altitudeScale alculated by: (max - min)/255.0, where max is the altitude of a black cell in meters and min is the altitude of a white cell in meters
+	// temporary values used to store what was interpreted in the ui
+	private double tempMin = 0.0;
+	private double tempMax = 255.0;
+	// mac and min altitude that conforms to the correct constraints where max > min >= 0
+	private double minAltitude = 0.0;
+	private double maxAltitude = 255.0;
+	
+	// Water level (for when generating water level)
+	double waterLevel = 0;
 	
 	// Weightings for each map type
 	Map<MapUtil.MapTypes, Double> weightings;
@@ -147,12 +162,14 @@ public class TrainTerrainPanel extends JPanel {
 		
 		// Initialize weightings and add input to ui
 		weightings = new HashMap<MapUtil.MapTypes, Double>();
+		weightingEntries = new HashSet<JTextField>();
 		for(final MapUtil.MapTypes type : MapUtil.MapTypes.values()) {
 			weightings.put(type, 1.0);
 			
 			JPanel weightPanel = new JPanel();
 			weightPanel.add(new JLabel(type.name()));
 			final JTextField weightEntry = new JTextField();
+			weightingEntries.add(weightEntry);
 			weightEntry.setText("1.0      ");
 			weightEntry.getDocument().addDocumentListener(new DocumentListener() {
 			  public void changedUpdate(DocumentEvent e) {
@@ -170,14 +187,14 @@ public class TrainTerrainPanel extends JPanel {
 			    		double parsed =  Double.parseDouble(weightEntry.getText());
 			    		if(parsed >= 0) {
 			    			weightings.put(type, parsed);
-						} else {
+						} else if(!noWarning) {
 							JOptionPane.showMessageDialog(null,
-							          "Error: Please enter a double bigger than 0", "Error Massage",
+							          "Error: Please enter a double bigger than 0", "Error Message",
 							          JOptionPane.ERROR_MESSAGE);
 						}
 			    	} catch(Exception ex) {
-			    		JOptionPane.showMessageDialog(null,
-						          "Error: Please enter a double bigger than 0", "Error Massage",
+			    		if (!noWarning) JOptionPane.showMessageDialog(null,
+						          "Error: Please enter a double bigger than 0", "Error Message",
 						          JOptionPane.ERROR_MESSAGE);
 			    	}
 			  	}
@@ -188,13 +205,13 @@ public class TrainTerrainPanel extends JPanel {
 		}
 
 		
-		cellSize = 1.0;
+		pixelSize = 1.0;
 		
 		JPanel cellSizePanel = new JPanel();
 		cellSizePanel.add(new JLabel("Pixel Size (meters)"));
-		final JTextField cellSizeEntry = new JTextField();
-		cellSizeEntry.setText("1.0      ");
-		cellSizeEntry.getDocument().addDocumentListener(new DocumentListener() {
+		final JTextField pixelSizeEntry = new JTextField();
+		pixelSizeEntry.setText("1.0      ");
+		pixelSizeEntry.getDocument().addDocumentListener(new DocumentListener() {
 		  public void changedUpdate(DocumentEvent e) {
 		    warn();
 		  }
@@ -207,23 +224,25 @@ public class TrainTerrainPanel extends JPanel {
 
 		  public void warn() {
 			  try {
-		    		double parsed =  Double.parseDouble(cellSizeEntry.getText());
+		    		double parsed =  Double.parseDouble(pixelSizeEntry.getText());
 		    		if(parsed > 0) {
-		    			cellSize = parsed;
+		    			pixelSize = parsed;
+					} else if (!noWarning) {
+						JOptionPane.showMessageDialog(null,
+						          "Error: Please enter a double bigger than 0", "Error Message",
+						          JOptionPane.ERROR_MESSAGE);
 					}
 		    	} catch(Exception ex) {
-		    		JOptionPane.showMessageDialog(null,
-					          "Error: Please enter a double bigger than 0", "Error Massage",
+		    		if (!noWarning) JOptionPane.showMessageDialog(null,
+					          "Error: Please enter a double bigger than 0", "Error Message",
 					          JOptionPane.ERROR_MESSAGE);
 		    	}
 		  	}
 		});
-		cellSizePanel.add(cellSizeEntry);
+		cellSizePanel.add(pixelSizeEntry);
 		
 		constantsPanel.add(cellSizePanel);
 		
-		// Calculated by: (max - min)/255.0, where max is the altitude of a black cell in meters and min is the altitude of a white cell in meters
-		altitudeScale = 1.0;
 		
 		JPanel altitudeScalePanel = new JPanel();
 		altitudeScalePanel.setLayout(new BoxLayout(altitudeScalePanel, BoxLayout.Y_AXIS));
@@ -234,9 +253,9 @@ public class TrainTerrainPanel extends JPanel {
 		altitudeScalePanel.add(maxPanel);
 		maxPanel.add(new JLabel("High (white) in meters:"));
 		
-		final JTextField minEntry = new JTextField();
-		minEntry.setText("0.0              ");
-		minEntry.getDocument().addDocumentListener(new DocumentListener() {
+		final JTextField minAltitudeEntry = new JTextField();
+		minAltitudeEntry.setText("0.0              ");
+		minAltitudeEntry.getDocument().addDocumentListener(new DocumentListener() {
 		  public void changedUpdate(DocumentEvent e) {
 		    warn();
 		  }
@@ -249,26 +268,29 @@ public class TrainTerrainPanel extends JPanel {
 
 		  public void warn() {
 			  try {
-		    		double parsed =  Double.parseDouble(minEntry.getText());
-		    		min = parsed;
-		    		if(max > min && min >= 0.0) {
-		    			altitudeScale = (max - min)/255;
-					} else {
+		    		double parsed =  Double.parseDouble(minAltitudeEntry.getText());
+		    		tempMin = parsed;
+		    		if(tempMax > tempMin && tempMin >= 0.0) {
+		    			minAltitude = tempMin;
+		    			maxAltitude = tempMax;
+		    			// Re-generate water map to reflect change in scale (method will handle case where water map is loaded instead of set)
+		    			generateWaterMap();
+					} else if (!noWarning) {
 						JOptionPane.showMessageDialog(null,
-						          "Error: Please enter a positive double smaller than max", "Error Massage",
+						          "Error: Please enter a positive double smaller than max", "Error Message",
 						          JOptionPane.ERROR_MESSAGE);
 					}
 		    	} catch(Exception ex) {
-		    		JOptionPane.showMessageDialog(null,
-					          "Error: Please enter a double", "Error Massage",
+		    		if (!noWarning) JOptionPane.showMessageDialog(null,
+					          "Error: Please enter a double", "Error Message",
 					          JOptionPane.ERROR_MESSAGE);
 		    	}
 		  	}
 		});
-		minPanel.add(minEntry);
-		final JTextField maxEntry = new JTextField();
-		maxEntry.setText("255.0         ");
-		maxEntry.getDocument().addDocumentListener(new DocumentListener() {
+		minPanel.add(minAltitudeEntry);
+		final JTextField maxAltitudeEntry = new JTextField();
+		maxAltitudeEntry.setText("255.0         ");
+		maxAltitudeEntry.getDocument().addDocumentListener(new DocumentListener() {
 		  public void changedUpdate(DocumentEvent e) {
 		    warn();
 		  }
@@ -281,23 +303,26 @@ public class TrainTerrainPanel extends JPanel {
 
 		  public void warn() {
 			  try {
-		    		double parsed =  Double.parseDouble(maxEntry.getText());
-		    		max = parsed;
-		    		if(max > min && min >= 0.0) {
-		    			altitudeScale = (max - min)/255;
-					} else {
+		    		double parsed =  Double.parseDouble(maxAltitudeEntry.getText());
+		    		tempMax = parsed;
+		    		if(tempMax > tempMin && tempMin >= 0.0) {
+		    			minAltitude = tempMin;
+		    			maxAltitude = tempMax;
+		    			// Re-generate water map to reflect change in scale (method will handle case where water map is loaded instead of set)
+		    			generateWaterMap();
+					} else if (!noWarning) {
 						JOptionPane.showMessageDialog(null,
-						          "Error: Please enter a double bigger than min", "Error Massage",
+						          "Error: Please enter a double bigger than min", "Error Message",
 						          JOptionPane.ERROR_MESSAGE);
 					}
 		    	} catch(Exception ex) {
-		    		JOptionPane.showMessageDialog(null,
-					          "Error: Please enter a double", "Error Massage",
+		    		if (!noWarning) JOptionPane.showMessageDialog(null,
+					          "Error: Please enter a double", "Error Message",
 					          JOptionPane.ERROR_MESSAGE);
 		    	}
 		  	}
 		});
-		maxPanel.add(maxEntry);
+		maxPanel.add(maxAltitudeEntry);
 		
 		constantsPanel.add(altitudeScalePanel);
 		
@@ -392,36 +417,19 @@ public class TrainTerrainPanel extends JPanel {
 				}
 				
 				//query user for water level
-				String input = JOptionPane.showInputDialog("Altitude of water level?");
-				double level;
+				String input = JOptionPane.showInputDialog("Altitude of water level (meters)?");
 				if (input != null) try {
-					level = Double.valueOf(input);
+					waterLevel = Double.valueOf(input);
 				} catch (NumberFormatException e) {
 					//bad input
 					return; //ignore
 				} else {
 					return; //cancelled
 				}
-				
+				 if(waterLevel > 0) {
 				//generate water map
-				if (level > 0) {
-					//generate water map
-					int width = altitudeLayer.length;
-					int height = altitudeLayer[0].length;
-					waterLayer = new double[width][height];
-					for(int i = 0; i < width; i++) {
-						for(int j = 0; j < height; j ++) {
-							double altitude = altitudeLayer[i][j]*cellSize;
-							if (altitude < level) {
-								waterLayer[i][j] = level - altitude;
-							} else {
-								waterLayer[i][j] = 0;
-							}
-							
-						}
-					}
-					//create image
-					waterImage = FileUtil.mapToImage(waterLayer);
+				generateWaterMap();
+				
 				} else {
 					waterImage = null;
 					waterLayer = null;
@@ -500,11 +508,12 @@ public class TrainTerrainPanel extends JPanel {
 					// Set start for path
 					Pair<Integer, Integer> start = new Pair<Integer, Integer>(0, 0);
 					
-					//TOD add UI control for this
+					//TODO add UI control for this
 					double costDistance = 1.0;
 					
 					// Perform analysis
-					analysis = new MapAnalysis(source, start, layers, cellSize, altitudeScale, costDistance, weightings);
+					double altitudeScale = (maxAltitude - minAltitude)/255.0;
+					analysis = new MapAnalysis(source, start, layers, pixelSize, altitudeScale, costDistance, weightings);
 					
 					// Update Images
 					discreteImage = mapToBufferedImageColor(analysis.discreteCost);
@@ -545,6 +554,30 @@ public class TrainTerrainPanel extends JPanel {
 				// Clear Images
 				altitudeImage = waterImage = discreteImage = accumulatedImage = pathImage = null;
 				updateImages();
+				
+				// Un-check doSave
+				doSave.setSelected(false);
+				
+				// Reset text field entries
+				noWarning = true;
+				// Set all weightings to 0
+				for(JTextField weightEntry : weightingEntries) {
+					weightEntry.setText("1.0");
+				}
+				for(MapUtil.MapTypes type : weightings.keySet()) {
+					weightings.put(type, 1.0);
+				}
+				
+				// Set pixelSize to default
+				pixelSizeEntry.setText("1.0");
+				pixelSize = 1.0;
+				
+				// Set altitude scaling maxAltitudeEntryariables to default
+				minAltitudeEntry.setText("0.0");
+				tempMin = 0.0;
+				maxAltitudeEntry.setText("255.0");
+				tempMax = 255.0;
+				noWarning = false;
 			}
 		});
 		//Add listener for window resizing
@@ -645,6 +678,30 @@ public class TrainTerrainPanel extends JPanel {
 			label.setIcon(null);
 		}
 	}
+
+
+	private void generateWaterMap() {
+		if (waterLevel > 0) {
+			//generate water map
+			int width = altitudeLayer.length;
+			int height = altitudeLayer[0].length;
+			waterLayer = new double[width][height];
+			double altitudeScale = (maxAltitude - minAltitude)/255.0;
+			for(int i = 0; i < width; i++) {
+				for(int j = 0; j < height; j ++) {
+					double altitude = altitudeLayer[i][j]*altitudeScale + minAltitude; // Convert altitudeLayer value to altitude using scale and min value
+					if (altitude < waterLevel) {
+						waterLayer[i][j] = waterLevel - altitude;
+					} else {
+						waterLayer[i][j] = 0;
+					}
+					
+				}
+			}
+			//create image
+			waterImage = FileUtil.mapToImage(waterLayer);
+		}
+	}
 	
 	/**
 	 * Converts 2D array to a grayscale BufferedImage
@@ -682,7 +739,7 @@ public class TrainTerrainPanel extends JPanel {
 		}
 		for(int i = 0; i < dataMap.length; i++) {
 			for(int j = 0; j < dataMap[0].length; j++) {
-				int scaledValue = (int)(dataMap[i][j]*altitudeScale*255/max);
+				int scaledValue = (int)(dataMap[i][j]*255/max);
 				Color color = new Color(Math.min(255, (int)(255*((scaledValue)/127.0))), Math.min(255, 255 - (int)(255*((scaledValue - 128)/128.0))), 0);
 				colorImage.setRGB(i, j, color.getRGB());
 			}
