@@ -115,9 +115,7 @@ public class DiscreteCostAnalysis {
 		int width = roadsLayer.length;
 	    int height = roadsLayer[0].length;
 		
-		//TODO optimize the algorithm for finding distance to nearest road
-		
-		//TODO make road distance map (based on accumulated cost code)
+		// make road distance map (based on accumulated cost code)
 
 	    // where:
 	    //      0 means that the cell hasn't been added to toEvaluate yet
@@ -152,9 +150,15 @@ public class DiscreteCostAnalysis {
 	        if(status[x][y] == EVALUATED) continue;	        
 	        
 	        // update cost
-	        cost[x][y] = (distance == 90 && cellSize < 10) ? 1 : Math.min((distance/200)*9, 9); //TODO change this to an equation with range 1 to 9 based off of distance
-	        //Math.abs(10 - accumulatedCost[i][j]); //TODO don't hard-code ideal distance (10)
-	        
+	        double idealMetersFromRoad = 10.0; //TODO don't hard-code ideal distance (10 meters)
+			double preference = Math.abs(idealMetersFromRoad - distance);
+			if (preference > 9.0) {
+				preference = 9.0;
+			}
+	        cost[x][y] = preference;
+
+	        //cost[x][y] = (distance == 90 && cellSize < 10) ? 1 : Math.min((distance/500)*9, 9); //TODO change this to an equation with range 1 to 9 based off of distance
+
 	        // update status of eval to evaluated
 	        status[x][y] = EVALUATED;
 	        
