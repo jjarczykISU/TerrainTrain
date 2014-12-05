@@ -26,6 +26,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -50,7 +52,7 @@ public class TrainTerrainPanel extends JPanel {
 	JTextField minAltitudeEntry;
 	JTextField maxAltitudeEntry;
 	
-	JCheckBox doSave;
+	JCheckBox doSave, doOverlay;
 	
 	boolean noWarning = false;
 	
@@ -315,7 +317,16 @@ public class TrainTerrainPanel extends JPanel {
 		final JButton resetButton = new JButton("Reset");
 		analysisPanel.add(resetButton);
 		
-		// Add checkbox
+		// Add overlay enable
+		JPanel doOverlayPanel = new JPanel();
+		analysisPanel.add(doOverlayPanel);
+		JLabel doOverlayLabel = new JLabel("path overlay:");
+		doOverlay = new JCheckBox();
+		doOverlay.setSelected(true);
+		doOverlayPanel.add(doOverlayLabel);
+		doOverlayPanel.add(doOverlay);
+		
+		// Add save file checkbox
 		JPanel doSavePanel = new JPanel();
 		analysisPanel.add(doSavePanel);
 		JLabel doSaveLabel = new JLabel("save to file:");
@@ -519,6 +530,8 @@ public class TrainTerrainPanel extends JPanel {
 				
 				// Un-check doSave
 				doSave.setSelected(false);
+				// check doOverlay
+				doOverlay.setSelected(true);
 				
 				// Reset text field entries
 				noWarning = true;
@@ -540,6 +553,13 @@ public class TrainTerrainPanel extends JPanel {
 				maxAltitudeEntry.setText("255.0");
 				tempMax = 255.0;
 				noWarning = false;
+			}
+		});
+		//Add listener for overlay enable
+		doOverlay.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				updateImages();
 			}
 		});
 		//Add listener for window resizing
@@ -624,7 +644,7 @@ public class TrainTerrainPanel extends JPanel {
 		}
 		
 		Image scaleOverlay;
-		if (pathOverlay != null) {
+		if (pathOverlay != null && doOverlay.isSelected()) {
 			scaleOverlay = pathOverlay.getScaledInstance(width, height, Image.SCALE_DEFAULT);
 		} else {
 			scaleOverlay = null;
