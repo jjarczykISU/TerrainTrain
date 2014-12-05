@@ -151,7 +151,7 @@ public class DiscreteCostAnalysis {
 	        
 	        // update cost
 	        double idealMetersFromRoad = 50.0; //TODO don't hard-code ideal distance (10 meters)
-			double preference = Math.abs(idealMetersFromRoad - distance) / 10.0; //TODO 1 preference point / 10 meters is another hard-coded value...
+			double preference = 1 + Math.abs(idealMetersFromRoad - distance) / 10.0; //TODO 1 preference point / 10 meters is another hard-coded value...
 			if (preference > 9.0) {
 				preference = 9.0;
 			}
