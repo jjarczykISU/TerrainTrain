@@ -149,13 +149,16 @@ public class DiscreteCostAnalysis {
 	        // Check that this cell has not been evaluated yet
 	        if(status[x][y] == EVALUATED) continue;	        
 	        
-//	        // update accumulatedCost
-//	        accumulatedCost[x][y] = Math.abs(10 - distance); //TODO don't hard-code ideal distance (10)
-
 	        // update cost
 	        double idealMetersFromRoad = 10.0; //TODO don't hard-code ideal distance (10 meters)
-	        cost[x][y] = Math.abs(idealMetersFromRoad - distance); //TODO change this to an equation with range 1 to 9 based off of distance
-	        
+			double preference = Math.abs(idealMetersFromRoad - distance);
+			if (preference > 9.0) {
+				preference = 9.0;
+			}
+	        cost[x][y] = preference;
+
+	        //cost[x][y] = (distance == 90 && cellSize < 10) ? 1 : Math.max((distance/500)*9, 9); //TODO change this to an equation with range 1 to 9 based off of distance
+
 	        // update status of eval to evaluated
 	        status[x][y] = EVALUATED;
 	        
