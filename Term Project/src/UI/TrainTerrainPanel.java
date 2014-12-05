@@ -2,6 +2,7 @@ package UI;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,9 +12,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -41,8 +44,8 @@ public class TrainTerrainPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
 	private JTabbedPane tabbedPane;
-	private OverlayPanel altitudePanel, waterPanel, roadsPanel, housingPanel, discretePanel, accumulatedPanel;
-	private BufferedImage altitudeImage, waterImage, roadsImage, housingImage, discreteImage, accumulatedImage;
+	private OverlayPanel altitudePanel, waterPanel, roadsPanel, housingPanel, discretePanel, accumulatedPanel, vectorFieldPanel;
+	private BufferedImage altitudeImage, waterImage, roadsImage, housingImage, discreteImage, accumulatedImage, vectorFieldImage;
 	private BufferedImage pathOverlay;
 	
 	HashSet<JTextField> weightingEntries;
@@ -109,6 +112,9 @@ public class TrainTerrainPanel extends JPanel {
 		
 		accumulatedPanel = new OverlayPanel(new BorderLayout());
 		tabbedPane.addTab("Accumulated Cost Map", null, accumulatedPanel, null);
+		
+		vectorFieldPanel = new OverlayPanel(new BorderLayout());
+		tabbedPane.addTab("Vector Field", null, vectorFieldPanel, null);
 		
 		// Add Buttons for User Interaction
 		JPanel inputAndOptionsPanel = new JPanel();
@@ -490,6 +496,7 @@ public class TrainTerrainPanel extends JPanel {
 					// Update Images
 					discreteImage = mapToBufferedImageColor(analysis.discreteCost);
 					accumulatedImage = mapToBufferedImageColor(analysis.accumulatedCost);
+					vectorFieldImage = generateVectorFieldImage(analysis.accumulatedCost);
 					pathOverlay = pathOverlayImage(analysis.path);
 					updateImages();
 					
@@ -498,6 +505,7 @@ public class TrainTerrainPanel extends JPanel {
 						HashMap<String, BufferedImage> analysisData = new HashMap<String, BufferedImage>();
 						analysisData.put("discreteMap", discreteImage);
 						analysisData.put("accumulatedMap", accumulatedImage);
+						analysisData.put("vectorField", vectorFieldImage);
 						analysisData.put("pathMap", pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer)); //generate image on demand
 						// Add input files to be saved as well
 						analysisData.put("altitudeMap", altitudeImage);
@@ -522,7 +530,7 @@ public class TrainTerrainPanel extends JPanel {
 				housingLayer = null;
 				
 				// Clear Images
-				altitudeImage = waterImage = discreteImage = accumulatedImage = null;
+				altitudeImage = waterImage = discreteImage = accumulatedImage = vectorFieldImage = null;
 				updateImages();
 				
 				// Reset water level
@@ -599,7 +607,7 @@ public class TrainTerrainPanel extends JPanel {
 	 * Clears all the images that are generated from map analysis
 	 */
 	private void clearAnalysisImages() {
-		discreteImage = accumulatedImage = null;
+		discreteImage = accumulatedImage = vectorFieldImage = null;
 	}
 	
 	/**
@@ -627,6 +635,7 @@ public class TrainTerrainPanel extends JPanel {
 			housingPanel.setBackgroundImage(null);
 			discretePanel.setBackgroundImage(null);
 			accumulatedPanel.setBackgroundImage(null);
+			vectorFieldPanel.setBackgroundImage(null);
 			return;
 		}
 		int paneWidth = altitudePanel.getWidth();
@@ -656,6 +665,7 @@ public class TrainTerrainPanel extends JPanel {
 		updateImage(housingPanel, housingImage, scaleOverlay, width, height);
 		updateImage(discretePanel, discreteImage, scaleOverlay, width, height);
 		updateImage(accumulatedPanel, accumulatedImage, scaleOverlay, width, height);
+		updateImage(vectorFieldPanel, vectorFieldImage, scaleOverlay, width, height);
 		
 		altitudePanel.setOverlayImage(scaleOverlay);
 	}
@@ -738,6 +748,121 @@ public class TrainTerrainPanel extends JPanel {
 			}
 		}
 		return colorImage;
+	}
+	
+	/**
+	 * Converts 2D array to a black and white vector field image
+	 * @param dataMap 2D array representing accumulated cost values
+	 * @return resulting BufferedImage
+	 */
+	private BufferedImage generateVectorFieldImage(double[][] dataMap) {
+		int spacing = 15; //grid size in pixels
+		Integer vLength = 5; //vector length in pixels
+		
+		int width = dataMap.length;
+		int height = dataMap[0].length;
+		BufferedImage pathImage = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+		Graphics2D graphics = pathImage.createGraphics();
+		
+		//fill white
+		graphics.setPaint(Color.WHITE);
+		graphics.fillRect(0, 0, width, height);
+		
+		//draw vectors
+		graphics.setPaint(Color.BLACK);
+		for(int j = spacing/2; j < height; j+=spacing) {
+			for(int i = spacing/2; i < width; i+=spacing) {
+				//TODO draw a vector
+				List<Pair<Integer, Integer>> path = steepestCostPath(new Pair<Integer, Integer>(i, j), dataMap, vLength);
+				Pair<Integer, Integer> start = path.get(0);
+				Pair<Integer, Integer> end = path.get(path.size()-1);
+				graphics.drawOval(start.getFirst()-1, start.getSecond()-1, 2, 2);
+				graphics.drawLine(start.getFirst(), start.getSecond(), end.getFirst(), end.getSecond());
+			}
+		}
+		return pathImage;
+	}
+	private static List<Pair<Integer, Integer>> steepestCostPath(Pair<Integer, Integer> start, double[][] accumulatedCost, Integer lengthLimit) {
+		int x = start.getFirst();
+		int y = start.getSecond();
+		
+		// Initialize path
+		List<Pair<Integer, Integer>> path = new ArrayList<Pair<Integer, Integer>>(lengthLimit);
+		
+		double currValue = accumulatedCost[x][y];
+		path.add(new Pair<Integer, Integer>(x, y));
+		
+		// Until the path has reached the source (where the source cells have values of 0)
+		while(currValue != 0 && (lengthLimit==null || lengthLimit > 0)) {
+			lengthLimit--;
+			// Determine the next path segment by finding the neighbor with the least cost
+			Pair<Integer, Integer> nextCell = null;
+			double smallestValue = -1;
+			// Down
+			if(y + 1 < accumulatedCost[0].length) {
+				if(smallestValue == -1 || accumulatedCost[x][y + 1] < smallestValue) {
+					smallestValue = accumulatedCost[x][y + 1];
+					nextCell = new Pair<Integer, Integer>(x, y + 1);
+				}
+			}
+			// Up
+			if(y - 1 >= 0) {
+				if(smallestValue == -1 || accumulatedCost[x][y - 1] < smallestValue) {
+					smallestValue = accumulatedCost[x][y - 1];
+					nextCell = new Pair<Integer, Integer>(x, y - 1);
+				}
+			}
+			// Right
+			if((x + 1 < accumulatedCost.length)) {
+				if(smallestValue == -1 || accumulatedCost[x + 1][y] < smallestValue) {
+					smallestValue = accumulatedCost[x + 1][y];
+					nextCell = new Pair<Integer, Integer>(x + 1, y);
+				}
+			}
+			// Left
+			if((x - 1 >= 0)) {
+				if(smallestValue == -1 || accumulatedCost[x - 1][y] < smallestValue) {
+					smallestValue = accumulatedCost[x - 1][y];
+					nextCell = new Pair<Integer, Integer>(x - 1, y);
+				}
+			}
+			// Down-Right
+			if(y + 1 < accumulatedCost[0].length && (x + 1 < accumulatedCost.length)) {
+				if(smallestValue == -1 || accumulatedCost[x + 1][y + 1] < smallestValue) {
+					smallestValue = accumulatedCost[x + 1][y + 1];
+					nextCell = new Pair<Integer, Integer>(x + 1, y + 1);
+				}
+			}
+			// Down-Left
+			if(y + 1 < accumulatedCost[0].length && (x - 1 >= 0)) {
+				if(smallestValue == -1 || accumulatedCost[x - 1][y + 1] < smallestValue) {
+					smallestValue = accumulatedCost[x - 1][y + 1];
+					nextCell = new Pair<Integer, Integer>(x - 1, y + 1);
+				}
+			}
+			// Up-Right
+			if(y - 1 >= 0 && (x + 1 < accumulatedCost.length)) {
+				if(smallestValue == -1 || accumulatedCost[x + 1][y - 1] < smallestValue) {
+					smallestValue = accumulatedCost[x + 1][y - 1];
+					nextCell = new Pair<Integer, Integer>(x + 1, y - 1);
+				}
+			}
+			// Up-Left
+			if(y - 1 >= 0 && (x - 1 >= 0)) {
+				if(smallestValue == -1 || accumulatedCost[x - 1][y - 1] < smallestValue) {
+					smallestValue = accumulatedCost[x - 1][y - 1];
+					nextCell = new Pair<Integer, Integer>(x - 1, y - 1);
+				}
+			}
+			
+			// Adds path segment to the path
+			x = nextCell.getFirst();
+			y = nextCell.getSecond();
+			path.add(new Pair<Integer, Integer>(x, y));
+			currValue = accumulatedCost[x][y];
+		}
+		
+		return path;
 	}
 
 	/**
