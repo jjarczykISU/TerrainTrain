@@ -118,7 +118,6 @@ public class DiscreteCostAnalysis {
 		//TODO optimize the algorithm for finding distance to nearest road
 		
 		//TODO make road distance map (based on accumulated cost code)
-		double costDistance = 1.0; //TODO get rid of this
 
 	    // where:
 	    //      0 means that the cell hasn't been added to toEvaluate yet
@@ -133,14 +132,13 @@ public class DiscreteCostAnalysis {
 	    // add all source cells to toEvaluate
 	    for(int i = 0; i < width; i++) {
 	        for(int j = 0; j < height; j++) {
-	        	//status[i][j] = UNKNOWN;
-	            if(roadsLayer[i][j] > 0) {
+	            if(roadsLayer[i][j] != 255) {
 	                toEvaluate.add(0, i, j);
 	            }
 	        }
 	    }
 	    
-	    double[][] accumulatedCost = new double[width][height];
+	    double[][] cost = new double[width][height];
 	    
 	    while(!toEvaluate.isEmpty()) {
 	    	// get least distance cell from toEvaluate list
@@ -151,76 +149,60 @@ public class DiscreteCostAnalysis {
 	        int y = evalCoor.getSecond();
 	        
 	        // Check that this cell has not been evaluated yet
-	        if(status[x][y] == EVALUATED) continue;
+	        if(status[x][y] == EVALUATED) continue;	        
 	        
-	        double accumulatedCellCost = distance + 1;
-	        
-//	        // if source cell
-//	        if(roadsLayer[x][y] != 0) {
-//	            accumulatedCellCost = 0;
-//	        }
-//	        else {
-//	        	accumulatedCellCost = distance;
-//	        }
-	        
-	        // update accumulatedCost
-	        accumulatedCost[x][y] = accumulatedCellCost;
+	        // update cost
+	        cost[x][y] = distance + 1; //TODO change this to an equation with range 1 to 9 based off of distance
+	        //Math.abs(10 - accumulatedCost[i][j]); //TODO don't hard-code ideal distance (10)
 	        
 	        // update status of eval to evaluated
 	        status[x][y] = EVALUATED;
 	        
-	        // add neighbor coordinate the accumulated cost of the current cell to toEvalute if that cell does not have the status of 2 yet
+	        // add neighbor coordinate to be evaluated
 	        
 	        // add down
 	        if(y+1 < height && status[x][y+1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost + costDistance, x, y+1);
+	            toEvaluate.add(distance + cellSize, x, y+1);
 	            status[x][y+1] = DISCOVERED;
 	        }
 	        // add up
 	        if(y-1 >= 0 && status[x][y-1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost + costDistance, x, y-1);
+	            toEvaluate.add(distance + cellSize, x, y-1);
 	            status[x][y-1] = DISCOVERED;
 	        }
 	        // add right
 	        if(x+1 < width && status[x+1][y] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost + costDistance, x+1, y);
+	            toEvaluate.add(distance + cellSize, x+1, y);
 	            status[x+1][y] = DISCOVERED;
 	        }
 	        // add left
 	        if(x-1 >= 0 && status[x-1][y] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost + costDistance, x-1, y);
+	            toEvaluate.add(distance + cellSize, x-1, y);
 	            status[x-1][y] = DISCOVERED;
 	        }
 	        // add right-up
 	        if((x+1 < width && y-1 >= 0) && status[x+1][y-1] != EVALUATED) {
-	        	toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x+1, y-1);
+	        	toEvaluate.add(distance + cellSize*Math.sqrt(2), x+1, y-1);
 	            status[x+1][y-1] = DISCOVERED;
 	        }
 	        // add left-up
 	        if((x-1 >= 0 && y-1 >= 0) && status[x-1][y-1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x-1, y-1);
+	            toEvaluate.add(distance + cellSize*Math.sqrt(2), x-1, y-1);
 	            status[x-1][y-1] = DISCOVERED;
 	        }
 	        //add right-down
 	        if((x+1 < width && y+1 < height) && status[x+1][y+1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x+1, y+1);
+	            toEvaluate.add(distance + cellSize*Math.sqrt(2), x+1, y+1);
 	            status[x+1][y+1] = DISCOVERED;
 	        }
 	        //add left-down
 	        if((x-1 >= 0 && y+1 < height) && status[x-1][y+1] != EVALUATED) {
-	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x-1, y+1);
+	            toEvaluate.add(distance + cellSize*Math.sqrt(2), x-1, y+1);
 	            status[x-1][y+1] = DISCOVERED;
 	        }
 	    }
 	    
-//		//TODO convert to difference from desired distance //TODO (disabled for debugging)
-//	    for(int i = 0; i < width; i++) {
-//	        for(int j = 0; j < height; j++) {
-//	            accumulatedCost[i][j] = Math.abs(10 - accumulatedCost[i][j]); //TODO don't hard-code ideal distance (10)
-//	        }
-//	    }
-	    
-		return accumulatedCost;
+		return cost;
 	}
 	
 	/**
