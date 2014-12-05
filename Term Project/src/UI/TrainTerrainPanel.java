@@ -530,7 +530,7 @@ public class TrainTerrainPanel extends JPanel {
 				housingLayer = null;
 				
 				// Clear Images
-				altitudeImage = waterImage = discreteImage = accumulatedImage = vectorFieldImage = null;
+				altitudeImage = waterImage = roadsImage = housingImage = discreteImage = accumulatedImage = vectorFieldImage = null;
 				updateImages();
 				
 				// Reset water level
