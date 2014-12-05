@@ -534,8 +534,6 @@ public class TrainTerrainPanel extends JPanel {
 						if(housingLayer != null) analysisData.put("waterMap", housingImage);
 						saveAnalysisData(analysisData);
 					}
-					// Change selected tab to path tab
-					tabbedPane.setSelectedIndex(6);
 				}
 			}
 		});		
@@ -703,6 +701,8 @@ public class TrainTerrainPanel extends JPanel {
 			}
 			//create image
 			waterImage = FileUtil.mapToImage(waterLayer);
+			// Update Images
+			updateImages();
 		}
 	}
 	
