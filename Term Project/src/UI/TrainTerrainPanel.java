@@ -555,6 +555,9 @@ public class TrainTerrainPanel extends JPanel {
 				altitudeImage = waterImage = discreteImage = accumulatedImage = pathImage = null;
 				updateImages();
 				
+				// Reset water level
+				waterLevel = 0;
+				
 				// Un-check doSave
 				doSave.setSelected(false);
 				
