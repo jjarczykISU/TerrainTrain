@@ -262,17 +262,14 @@ public class DiscreteCostAnalysis {
 	/**
 	 * Preference cost for altitude differences (angle between neighbors) for a single cell.
 	 * (1 most preferred, 9 least preferred):
-	 * 1 -> <15 degrees and >-50 degrees
-	 * 2 -> <30 degrees and >-50 degrees
-	 * 3 -> <45 degrees and >-50 degrees
-	 * 4 -> <50 degrees and >-50 degrees
-	 * 9 -> >60 degrees or <=-50 degrees
+	 * 9 -> >=60 degrees or <=-50 degrees
+	 * otherwise given a value using an exponential function with range 1 to 8
 	 * @param cellSize dimension of cell in meters
 	 * @param altitudeScale scale factor for altitude
 	 * @return the preference of the slope of the cell given the neighboring cells
 	 * @throws IllegalArgumentException neighbors is null or if the number of neighbors is 1 or less
 	 */
-	private static int slopePreference(double altitudeLayer, ArrayList<Double> neighbors, double cellSize, double altitudeScale) {
+	private static double slopePreference(double altitudeLayer, ArrayList<Double> neighbors, double cellSize, double altitudeScale) {
 		if(neighbors == null || neighbors.size() <= 1) {
 			throw new IllegalArgumentException();
 		}
@@ -288,16 +285,11 @@ public class DiscreteCostAnalysis {
 			if(calcSlope < smallestSlope) smallestSlope = calcSlope;
 		}
 		
-		//TODO low precision and aliasing, does not recognize small differences.
-		int preference = 9;
-		if(greatestSlope < 15 && smallestSlope >= -50) { 
-			preference = 1;
-		} else if(greatestSlope < 30 && smallestSlope >= -50){
-			preference = 2;
-		} else if(greatestSlope < 45 && smallestSlope >= -50){
-			preference = 3;
-		} else if(greatestSlope < 50){
-			preference = 4;
+		double preference = 9;
+		if(greatestSlope <= 60 && smallestSlope > -50) {
+			if(greatestSlope < 0) preference = 1;
+			else preference = 1 + Math.pow(greatestSlope, 4)/Math.pow(60,4)*8;
+			
 		}
 		
 		return preference;
