@@ -2,7 +2,6 @@ package algorithm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 import algorithm.MapUtil.MapTypes;
@@ -73,13 +72,13 @@ public class DiscreteCostAnalysis {
 		boolean withWater = layerCosts.containsKey(MapUtil.MapTypes.WATER);
 		double[][] waterLayerCost = (withWater) ? layerCosts.get(MapUtil.MapTypes.WATER) : null;
 		double[][] discreteCost = new double[width][height]; 
-		for(int i = 0; i < width; i ++) {
-			for(int j = 0; j < height; j ++) {
-				for(MapUtil.MapTypes layer : layerCosts.keySet()) {
-					if(withWater && waterLayerCost[i][j] != 0) { // if there is water in this cell
-						if(layer == MapTypes.ALTITUDE) continue; // ignore altitude differences layer
+		for (int i = 0; i < width; i ++) {
+			for (int j = 0; j < height; j ++) {
+				for (MapUtil.MapTypes layer : layerCosts.keySet()) {
+					if (withWater && waterLayerCost[i][j] != 0) { // if there is water in this cell
+						if (layer == MapTypes.ALTITUDE) continue; // ignore altitude differences layer
 					}
-					discreteCost[i][j] += weightings.get(layer)*layerCosts.get(layer)[i][j];
+					discreteCost[i][j] += weightings.get(layer) * layerCosts.get(layer)[i][j];
 				}
 			}
 		}
@@ -108,99 +107,120 @@ public class DiscreteCostAnalysis {
 	/**
 	 * Calculates the discrete cost map for the roads layer (interprets 0 as no road, otherwise road)
 	 * (1 most preferred, 9 least preferred)
-	 * Preference is determined by:
-	 * 9 -> directly on a road (is in the same cell and cellSize is less than 10) or more that 500m from nearest road cell
-	 * 1 -> 1 - 5m away from the nearest road cell or it is on a road cell and cellSize is 10 or greater
-	 * 2 -> 5 - 10m away from the nearest road cell
-	 * 3 -> 10 - 30m away from the nearest road cell
-	 * 4 -> 30 - 50m away from the nearest road cell
-	 * 5 -> 50 - 100m away from the nearest road cell
-	 * 6 -> 100 - 500m away from the nearest road cell
 	 * @param roadsLayer 2D array representing the roads on the map
 	 * @param cellSize dimensions of cell in meters (length/width of cell square)
 	 * @return discrete cost map for roads
 	 */
 	private static double[][] roadsLayerCost(double[][] roadsLayer, double cellSize) {
-		double[][] cost = new double[roadsLayer.length][roadsLayer[0].length];
+		int width = roadsLayer.length;
+	    int height = roadsLayer[0].length;
 		
-		for(int i = 0; i < cost.length; i ++) {
-			for(int j = 0; j < cost[0].length; j ++) {
-				//TODO optimize the algorithm for finding distance to nearest road (up to 500m)
-				
-				if(roadsLayer[i][j] != 0) { // if there is a road directly on this square
-					 if(cellSize < 10) cost[i][j] = 9;
-					 else cost[i][j] = 1;
-					 continue;					
-				}
-				// search if there is a road  within 5m of this cell
-				double distance = 0;
-				ArrayList<Pair<Integer, Integer>> neighbors = new ArrayList<Pair<Integer, Integer>>();
-				neighbors.add(new Pair<Integer, Integer>(i,j));
-				HashSet<Pair<Integer, Integer>> checked = new HashSet<Pair<Integer, Integer>>();
-				
-				boolean roadFound = false;
-				
-				// Look for within 500 meters of next road cell
-				while(distance < 500 && !roadFound) {
-					ArrayList<Pair<Integer, Integer>> nextNeighbors = new ArrayList<Pair<Integer, Integer>>();
-					// for each toSearch
-					for(Pair<Integer, Integer> n : neighbors) {
-						if(n.getFirst() + 1 < cost.length) {
-							if(n.getSecond() + 1 < cost[0].length) { 
-								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() + 1, n.getSecond() + 1);
-								if(!checked.contains(potentialNext)) {
-									nextNeighbors.add(potentialNext);
-									checked.add(potentialNext);
-								}
-							}
-							if(n.getSecond() - 1 >= 0) {
-								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() + 1, n.getSecond() - 1);
-								if(!checked.contains(potentialNext)) {
-									nextNeighbors.add(potentialNext);
-									checked.add(potentialNext);
-								}
-							}
-						}
-						if(n.getFirst() - 1 >= 0) {
-							if(n.getSecond() + 1 < cost[0].length) { 
-								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() - 1, n.getSecond() + 1);
-								if(!checked.contains(potentialNext)) {
-									nextNeighbors.add(potentialNext);
-									checked.add(potentialNext);
-								}
-							}
-							if(n.getSecond() - 1 >= 0) { 
-								Pair<Integer, Integer> potentialNext = new Pair<Integer, Integer>(n.getFirst() - 1, n.getSecond() - 1);
-								if(!checked.contains(potentialNext)) {
-									nextNeighbors.add(potentialNext);
-									checked.add(potentialNext);
-								}
-							}
-						}
-					}
-					neighbors = nextNeighbors;
-					
-					for(Pair<Integer, Integer> n : neighbors) {
-						if(roadsLayer[n.getFirst()][n.getSecond()] != 0) {
-							if(distance < 5) cost[i][j] = 1;
-							else if (distance < 10) cost[i][j] = 2;
-							else if (distance < 30) cost[i][j] = 3;
-							else if (distance < 50) cost[i][j] = 4;
-							else if (distance < 100) cost[i][j] = 5;
-							else cost[i][j] = 6;
-							roadFound = true;
-						}
-					}
-					distance += cellSize;
-				}
-				
-				if(!roadFound) cost[i][j] = 9;
+		//TODO optimize the algorithm for finding distance to nearest road
+		
+		//TODO make road distance map (based on accumulated cost code)
+		double costDistance = 1.0; //TODO get rid of this
 
-				
-			}
-		}
-		
-		return cost;
+	    // where:
+	    //      0 means that the cell hasn't been added to toEvaluate yet
+	    //      1 means that the cell has been added to toEvaluate but hasn't been evaluated yet
+	    //      2 means that the cell has been evaluated
+	    int DISCOVERED = 1;
+	    int EVALUATED = 2;
+	    int[][] status = new int[width][height];
+	   
+	    SortedCellList toEvaluate = new SortedCellList();
+	    
+	    // add all source cells to toEvaluate
+	    for(int i = 0; i < width; i++) {
+	        for(int j = 0; j < height; j++) {
+	        	//status[i][j] = UNKNOWN;
+	            if(roadsLayer[i][j] > 0) {
+	                toEvaluate.add(0, i, j);
+	            }
+	        }
+	    }
+	    
+	    double[][] accumulatedCost = new double[width][height];
+	    
+	    while(!toEvaluate.isEmpty()) {
+	    	// get least distance cell from toEvaluate list
+	    	Pair<Double, Pair<Integer, Integer>> eval = toEvaluate.removeFirst();
+	        Pair<Integer, Integer> evalCoor = eval.getSecond();
+	        double distance = eval.getFirst();
+	        int x = evalCoor.getFirst();
+	        int y = evalCoor.getSecond();
+	        
+	        // Check that this cell has not been evaluated yet
+	        if(status[x][y] == EVALUATED) continue;
+	        
+	        double accumulatedCellCost = distance + 1;
+	        
+//	        // if source cell
+//	        if(roadsLayer[x][y] != 0) {
+//	            accumulatedCellCost = 0;
+//	        }
+//	        else {
+//	        	accumulatedCellCost = distance;
+//	        }
+	        
+	        // update accumulatedCost
+	        accumulatedCost[x][y] = accumulatedCellCost;
+	        
+	        // update status of eval to evaluated
+	        status[x][y] = EVALUATED;
+	        
+	        // add neighbor coordinate the accumulated cost of the current cell to toEvalute if that cell does not have the status of 2 yet
+	        
+	        // add down
+	        if(y+1 < height && status[x][y+1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost + costDistance, x, y+1);
+	            status[x][y+1] = DISCOVERED;
+	        }
+	        // add up
+	        if(y-1 >= 0 && status[x][y-1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost + costDistance, x, y-1);
+	            status[x][y-1] = DISCOVERED;
+	        }
+	        // add right
+	        if(x+1 < width && status[x+1][y] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost + costDistance, x+1, y);
+	            status[x+1][y] = DISCOVERED;
+	        }
+	        // add left
+	        if(x-1 >= 0 && status[x-1][y] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost + costDistance, x-1, y);
+	            status[x-1][y] = DISCOVERED;
+	        }
+	        // add right-up
+	        if((x+1 < width && y-1 >= 0) && status[x+1][y-1] != EVALUATED) {
+	        	toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x+1, y-1);
+	            status[x+1][y-1] = DISCOVERED;
+	        }
+	        // add left-up
+	        if((x-1 >= 0 && y-1 >= 0) && status[x-1][y-1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x-1, y-1);
+	            status[x-1][y-1] = DISCOVERED;
+	        }
+	        //add right-down
+	        if((x+1 < width && y+1 < height) && status[x+1][y+1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x+1, y+1);
+	            status[x+1][y+1] = DISCOVERED;
+	        }
+	        //add left-down
+	        if((x-1 >= 0 && y+1 < height) && status[x-1][y+1] != EVALUATED) {
+	            toEvaluate.add(accumulatedCellCost + costDistance*Math.sqrt(2), x-1, y+1);
+	            status[x-1][y+1] = DISCOVERED;
+	        }
+	    }
+	    
+//		//TODO convert to difference from desired distance //TODO (disabled for debugging)
+//	    for(int i = 0; i < width; i++) {
+//	        for(int j = 0; j < height; j++) {
+//	            accumulatedCost[i][j] = Math.abs(10 - accumulatedCost[i][j]); //TODO don't hard-code ideal distance (10)
+//	        }
+//	    }
+	    
+		return accumulatedCost;
 	}
 	
 	/**
@@ -253,12 +273,13 @@ public class DiscreteCostAnalysis {
 				// Left
 				if(i - 1 >= 0) neighbors.add(altitudeLayer[i - 1][j]);
 				
-				cost[i][j] = slopePreference(altitudeLayer[i][j], neighbors, cellSize, altitudeScale);				
+				cost[i][j] = slopePreference(altitudeLayer[i][j], neighbors, cellSize, altitudeScale);
 			}
 		}
 		
 		return cost;
 	}
+	
 	/**
 	 * Preference cost for altitude differences (angle between neighbors) for a single cell.
 	 * (1 most preferred, 9 least preferred):
@@ -272,35 +293,25 @@ public class DiscreteCostAnalysis {
 	 * @return the preference of the slope of the cell given the neighboring cells
 	 * @throws IllegalArgumentException neighbors is null or if the number of neighbors is 1 or less
 	 */
-	private static int slopePreference(double altitudeLayer, ArrayList<Double> neighbors, double cellSize, double altitudeScale) {
+	private static double slopePreference(double altitudeLayer, ArrayList<Double> neighbors, double cellSize, double altitudeScale) {
 		if(neighbors == null || neighbors.size() <= 1) {
 			throw new IllegalArgumentException();
 		}
-		double greatestSlope = 0;
-		double smallestSlope = Integer.MAX_VALUE;
-
+		
+		double avgDiff = 0;
 		for(Double alt : neighbors) {
-			double altDiff = (altitudeLayer - alt)*altitudeScale;
-			double calcSlope = altDiff/cellSize;
-			calcSlope = Math.toDegrees(Math.atan(calcSlope));			
-			
-			if(calcSlope > greatestSlope) greatestSlope = calcSlope;
-			if(calcSlope < smallestSlope) smallestSlope = calcSlope;
+			avgDiff += Math.abs(altitudeLayer - alt);
 		}
+		avgDiff = avgDiff / neighbors.size() * altitudeScale;
 		
-		//TODO low precision and aliasing, does not recognize small differences.
-		int preference = 9;
-		if(greatestSlope < 15 && smallestSlope >= -50) { 
-			preference = 1;
-		} else if(greatestSlope < 30 && smallestSlope >= -50){
-			preference = 2;
-		} else if(greatestSlope < 45 && smallestSlope >= -50){
-			preference = 3;
-		} else if(greatestSlope < 50){
-			preference = 4;
-		}
+		double avgPercentGrade = 100.0 * avgDiff / cellSize;
 		
-		return preference;
+		// More than 100% grade (45 degrees) is patently absurd.
+		// The steepest train track in the world is 13.5%. The steepest car road in the world is about 35%.
+		// http://en.wikipedia.org/wiki/Grade_%28slope%29#Railways
+		double limit = 25.0;
+		if (avgPercentGrade > limit) return 9.0;
+		return 1.0 + 8.0 * Math.pow(avgPercentGrade, 2.0) / Math.pow(limit, 2.0); //can change the power to alter the shape of the curve.
 	}
 	
 
