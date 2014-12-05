@@ -18,7 +18,6 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -40,14 +39,9 @@ public class TrainTerrainPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
 	private JTabbedPane tabbedPane;
-	
-	private JLabel altitudeMap;
-	private JLabel waterMap;
-	private JLabel roadsMap;
-	private JLabel housingMap;
-	private JLabel discreteMap;
-	private JLabel accumulatedMap;
-	private JLabel pathMap;
+	private OverlayPanel altitudePanel, waterPanel, roadsPanel, housingPanel, discretePanel, accumulatedPanel;
+	private BufferedImage altitudeImage, waterImage, roadsImage, housingImage, discreteImage, accumulatedImage;
+	private BufferedImage pathOverlay;
 	
 	HashSet<JTextField> weightingEntries;
 	
@@ -60,7 +54,6 @@ public class TrainTerrainPanel extends JPanel {
 	
 	boolean noWarning = false;
 	
-	private BufferedImage altitudeImage, waterImage, roadsImage, housingImage, discreteImage, accumulatedImage, pathImage;
 
 	private MapAnalysis analysis;
 
@@ -97,55 +90,23 @@ public class TrainTerrainPanel extends JPanel {
 		add(tabbedPane, BorderLayout.CENTER);
 		
 		// Add Panels to JTabbedPane that will hold the image data
-		JPanel altitudePanel = new JPanel(new BorderLayout());
-		altitudeMap = new JLabel();
-		altitudeMap.setHorizontalAlignment(JLabel.CENTER);
-		altitudeMap.setVerticalAlignment(JLabel.CENTER);
-		altitudePanel.add(altitudeMap);
+		altitudePanel = new OverlayPanel(new BorderLayout());
 		tabbedPane.addTab("Altitude Map", null, altitudePanel, null);
 		
-		JPanel waterPanel = new JPanel(new BorderLayout());
-		waterMap = new JLabel();
-		waterMap.setHorizontalAlignment(JLabel.CENTER);
-		waterMap.setVerticalAlignment(JLabel.CENTER);
-		waterPanel.add(waterMap);
+		waterPanel = new OverlayPanel(new BorderLayout());
 		tabbedPane.addTab("Water Map", null, waterPanel, null);
 		
-		JPanel roadsPanel = new JPanel(new BorderLayout());
-		roadsMap = new JLabel();
-		roadsMap.setHorizontalAlignment(JLabel.CENTER);
-		roadsMap.setVerticalAlignment(JLabel.CENTER);
-		roadsPanel.add(roadsMap);
+		roadsPanel = new OverlayPanel(new BorderLayout());
 		tabbedPane.addTab("Roads Map", null, roadsPanel, null);
 		
-		JPanel housingPanel = new JPanel(new BorderLayout());
-		housingMap = new JLabel();
-		housingMap.setHorizontalAlignment(JLabel.CENTER);
-		housingMap.setVerticalAlignment(JLabel.CENTER);
-		housingPanel.add(housingMap);
+		housingPanel = new OverlayPanel(new BorderLayout());
 		tabbedPane.addTab("Housing Density Map", null, housingPanel, null);
 		
-		JPanel discretePanel = new JPanel(new BorderLayout());
-		discreteMap = new JLabel();
-		discreteMap.setHorizontalAlignment(JLabel.CENTER);
-		discreteMap.setVerticalAlignment(JLabel.CENTER);
-		discretePanel.add(discreteMap);
+		discretePanel = new OverlayPanel(new BorderLayout());
 		tabbedPane.addTab("Discrete Map", null, discretePanel, null);
 		
-		JPanel accumulatedPanel = new JPanel(new BorderLayout());
-		accumulatedMap = new JLabel();
-		accumulatedMap.setHorizontalAlignment(JLabel.CENTER);
-		accumulatedMap.setVerticalAlignment(JLabel.CENTER);
-		accumulatedPanel.add(accumulatedMap);
+		accumulatedPanel = new OverlayPanel(new BorderLayout());
 		tabbedPane.addTab("Accumulated Cost Map", null, accumulatedPanel, null);
-		
-		JPanel pathPanel = new JPanel(new BorderLayout());
-		pathMap = new JLabel();
-		pathMap.setHorizontalAlignment(JLabel.CENTER);
-		pathMap.setVerticalAlignment(JLabel.CENTER);
-		pathPanel.add(pathMap);
-		tabbedPane.addTab("Calculated Path", null, pathPanel, null);
-		
 		
 		// Add Buttons for User Interaction
 		JPanel inputAndOptionsPanel = new JPanel();
@@ -518,7 +479,7 @@ public class TrainTerrainPanel extends JPanel {
 					// Update Images
 					discreteImage = mapToBufferedImageColor(analysis.discreteCost);
 					accumulatedImage = mapToBufferedImageColor(analysis.accumulatedCost);
-					pathImage = pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer);
+					pathOverlay = pathOverlayImage(analysis.path);
 					updateImages();
 					
 					// Save analysis data if doSave is checked
@@ -526,7 +487,7 @@ public class TrainTerrainPanel extends JPanel {
 						HashMap<String, BufferedImage> analysisData = new HashMap<String, BufferedImage>();
 						analysisData.put("discreteMap", discreteImage);
 						analysisData.put("accumulatedMap", accumulatedImage);
-						analysisData.put("pathMap", pathImage);
+						analysisData.put("pathMap", pathAndAltitudeToBufferedImage(analysis.path, altitudeLayer)); //generate image on demand
 						// Add input files to be saved as well
 						analysisData.put("altitudeMap", altitudeImage);
 						if(waterLayer != null) analysisData.put("waterMap", waterImage);
@@ -550,7 +511,7 @@ public class TrainTerrainPanel extends JPanel {
 				housingLayer = null;
 				
 				// Clear Images
-				altitudeImage = waterImage = discreteImage = accumulatedImage = pathImage = null;
+				altitudeImage = waterImage = discreteImage = accumulatedImage = null;
 				updateImages();
 				
 				// Reset water level
@@ -618,7 +579,7 @@ public class TrainTerrainPanel extends JPanel {
 	 * Clears all the images that are generated from map analysis
 	 */
 	private void clearAnalysisImages() {
-		discreteImage = accumulatedImage = pathImage = null;
+		discreteImage = accumulatedImage = null;
 	}
 	
 	/**
@@ -640,17 +601,16 @@ public class TrainTerrainPanel extends JPanel {
 			imageWidth = housingImage.getWidth();
 			imageHeight = housingImage.getHeight();
 		} else {
-			altitudeMap.setIcon(null);
-			waterMap.setIcon(null);
-			roadsMap.setIcon(null);
-			housingMap.setIcon(null);
-			discreteMap.setIcon(null);
-			accumulatedMap.setIcon(null);
-			pathMap.setIcon(null);
+			altitudePanel.setBackgroundImage(null);
+			waterPanel.setBackgroundImage(null);
+			roadsPanel.setBackgroundImage(null);
+			housingPanel.setBackgroundImage(null);
+			discretePanel.setBackgroundImage(null);
+			accumulatedPanel.setBackgroundImage(null);
 			return;
 		}
-		int paneWidth = altitudeMap.getWidth();
-		int paneHeight = altitudeMap.getHeight();
+		int paneWidth = altitudePanel.getWidth();
+		int paneHeight = altitudePanel.getHeight();
 		//calculate desired display dimensions
 		int width, height;
 		if ((double)paneWidth/paneHeight < (double)imageWidth/imageHeight) { //comparing aspect ratios (must be floating point)
@@ -663,21 +623,31 @@ public class TrainTerrainPanel extends JPanel {
 			height = paneHeight;
 		}
 		
-		updateImage(altitudeMap, altitudeImage, width, height);
-		updateImage(waterMap, waterImage, width, height);
-		updateImage(roadsMap, roadsImage, width, height);
-		updateImage(housingMap, housingImage, width, height);
-		updateImage(discreteMap, discreteImage, width, height);
-		updateImage(accumulatedMap, accumulatedImage, width, height);
-		updateImage(pathMap, pathImage, width, height);
+		Image scaleOverlay;
+		if (pathOverlay != null) {
+			scaleOverlay = pathOverlay.getScaledInstance(width, height, Image.SCALE_DEFAULT);
+		} else {
+			scaleOverlay = null;
+		}
+		
+		updateImage(altitudePanel, altitudeImage, scaleOverlay, width, height);
+		updateImage(waterPanel, waterImage, scaleOverlay, width, height);
+		updateImage(roadsPanel, roadsImage, scaleOverlay, width, height);
+		updateImage(housingPanel, housingImage, scaleOverlay, width, height);
+		updateImage(discretePanel, discreteImage, scaleOverlay, width, height);
+		updateImage(accumulatedPanel, accumulatedImage, scaleOverlay, width, height);
+		
+		altitudePanel.setOverlayImage(scaleOverlay);
 	}
 	//a helper function
-	private void updateImage(JLabel label, BufferedImage image, int width, int height) {
+	private void updateImage(OverlayPanel panel, BufferedImage image, Image overlay, int width, int height) {
 		if (image != null) {
-			label.setIcon(new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_DEFAULT)));
+			panel.setBackgroundImage(image.getScaledInstance(width, height, Image.SCALE_DEFAULT));
 		} else {
-			label.setIcon(null);
+			panel.setBackgroundImage(null);
 		}
+		panel.setOverlayImage(overlay);
+		panel.repaint();
 	}
 
 
@@ -751,8 +721,29 @@ public class TrainTerrainPanel extends JPanel {
 	}
 
 	/**
+	 * Converts path to a BUfferedImage that will show the path as a red line on transparent background
+	 * @param path 2D path array that represents a path that will be overlaid on the image
+	 * @return BufferedImage
+	 */
+	private BufferedImage pathOverlayImage(int[][] path) {
+		int width = path.length;
+		int height = path[0].length;
+		BufferedImage pathImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+		for (int j = 0; j < height; j++) {
+			for (int i = 0; i < width; i++) {
+				if (path[i][j] == 1) {
+					pathImage.setRGB(i, j, 255<<24 | 255); //opaque, blue
+				} else {
+					pathImage.setRGB(i, j, 0); //transparent
+				}
+			}
+		}
+		return pathImage;
+	}
+
+	/**
 	 * Converts path and altitudeMap to a BUfferedImage that will show the path as a red line on the altitudeMap
-	 * @param path 2D path array that represents a path that will be overlayed on the image
+	 * @param path 2D path array that represents a path that will be overlaid on the image
 	 * @param altitudeMap 2D altitudeMap array that represents the altitude data
 	 * @return converted BufferedImage
 	 */
