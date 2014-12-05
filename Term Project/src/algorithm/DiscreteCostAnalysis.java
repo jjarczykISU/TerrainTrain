@@ -152,7 +152,7 @@ public class DiscreteCostAnalysis {
 	        if(status[x][y] == EVALUATED) continue;	        
 	        
 	        // update cost
-	        cost[x][y] = (distance == 90 && cellSize < 10) ? 1 : Math.max((distance/500)*9, 9); //TODO change this to an equation with range 1 to 9 based off of distance
+	        cost[x][y] = (distance == 90 && cellSize < 10) ? 1 : Math.min((distance/200)*9, 9); //TODO change this to an equation with range 1 to 9 based off of distance
 	        //Math.abs(10 - accumulatedCost[i][j]); //TODO don't hard-code ideal distance (10)
 	        
 	        // update status of eval to evaluated
