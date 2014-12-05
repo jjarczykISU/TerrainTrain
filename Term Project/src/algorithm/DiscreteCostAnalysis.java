@@ -157,7 +157,8 @@ public class DiscreteCostAnalysis {
 			}
 	        cost[x][y] = preference;
 
-	        //cost[x][y] = (distance == 90 && cellSize < 10) ? 1 : Math.max((distance/500)*9, 9); //TODO change this to an equation with range 1 to 9 based off of distance
+	        // alternate version that simply attracts towards roads (without trying to keep them from overlapping)
+	        //cost[x][y] = Math.min(9.0, (distance/500)*9.0);
 
 	        // update status of eval to evaluated
 	        status[x][y] = EVALUATED;
