@@ -270,14 +270,14 @@ public class TrainTerrainPanel extends JPanel {
 			  try {
 		    		double parsed =  Double.parseDouble(minAltitudeEntry.getText());
 		    		tempMin = parsed;
-		    		if(tempMax > tempMin && tempMin >= 0.0) {
+		    		if(tempMax > tempMin) {
 		    			minAltitude = tempMin;
 		    			maxAltitude = tempMax;
 		    			// Re-generate water map to reflect change in scale (method will handle case where water map is loaded instead of set)
 		    			generateWaterMap();
 					} else if (!noWarning) {
 						JOptionPane.showMessageDialog(null,
-						          "Error: Please enter a positive double smaller than max", "Error Message",
+						          "Error: Please enter a double smaller than max", "Error Message",
 						          JOptionPane.ERROR_MESSAGE);
 					}
 		    	} catch(Exception ex) {
@@ -305,7 +305,7 @@ public class TrainTerrainPanel extends JPanel {
 			  try {
 		    		double parsed =  Double.parseDouble(maxAltitudeEntry.getText());
 		    		tempMax = parsed;
-		    		if(tempMax > tempMin && tempMin >= 0.0) {
+		    		if(tempMax > tempMin) {
 		    			minAltitude = tempMin;
 		    			maxAltitude = tempMax;
 		    			// Re-generate water map to reflect change in scale (method will handle case where water map is loaded instead of set)
@@ -534,8 +534,6 @@ public class TrainTerrainPanel extends JPanel {
 						if(housingLayer != null) analysisData.put("waterMap", housingImage);
 						saveAnalysisData(analysisData);
 					}
-					// Change selected tab to path tab
-					tabbedPane.setSelectedIndex(6);
 				}
 			}
 		});		
@@ -554,6 +552,9 @@ public class TrainTerrainPanel extends JPanel {
 				// Clear Images
 				altitudeImage = waterImage = discreteImage = accumulatedImage = pathImage = null;
 				updateImages();
+				
+				// Reset water level
+				waterLevel = 0;
 				
 				// Un-check doSave
 				doSave.setSelected(false);
@@ -700,6 +701,8 @@ public class TrainTerrainPanel extends JPanel {
 			}
 			//create image
 			waterImage = FileUtil.mapToImage(waterLayer);
+			// Update Images
+			updateImages();
 		}
 	}
 	

@@ -283,11 +283,8 @@ public class DiscreteCostAnalysis {
 	/**
 	 * Preference cost for altitude differences (angle between neighbors) for a single cell.
 	 * (1 most preferred, 9 least preferred):
-	 * 1 -> <15 degrees and >-50 degrees
-	 * 2 -> <30 degrees and >-50 degrees
-	 * 3 -> <45 degrees and >-50 degrees
-	 * 4 -> <50 degrees and >-50 degrees
-	 * 9 -> >60 degrees or <=-50 degrees
+	 * 9 -> >=60 degrees or <=-50 degrees
+	 * otherwise given a value using an exponential function with range 1 to 8
 	 * @param cellSize dimension of cell in meters
 	 * @param altitudeScale scale factor for altitude
 	 * @return the preference of the slope of the cell given the neighboring cells
@@ -298,12 +295,35 @@ public class DiscreteCostAnalysis {
 			throw new IllegalArgumentException();
 		}
 		
+		double greatestSlope = 0;
+		double smallestSlope = Integer.MAX_VALUE;
+		
+		for(Double alt : neighbors) {
+			double altDiff = (altitudeLayer - alt)*altitudeScale;
+			double calcSlope = altDiff/cellSize;
+			calcSlope = Math.toDegrees(Math.atan(calcSlope));			
+			
+			if(calcSlope > greatestSlope) greatestSlope = calcSlope;
+			if(calcSlope < smallestSlope) smallestSlope = calcSlope;
+		}
+		
+		double preference = 9.0;
+		if(greatestSlope <= 60 && smallestSlope > -50) {
+			if(greatestSlope < 0) preference = 1.0;
+			else preference = 1 + Math.pow(greatestSlope, 4)/Math.pow(60,4)*8;
+			
+		}
+		
+		return preference;
+
+		/* Another continuous function:
+		 * 
 		double avgDiff = 0;
 		for(Double alt : neighbors) {
 			avgDiff += Math.abs(altitudeLayer - alt);
 		}
 		avgDiff = avgDiff / neighbors.size() * altitudeScale;
-		
+
 		double avgPercentGrade = 100.0 * avgDiff / cellSize;
 		
 		// More than 100% grade (45 degrees) is patently absurd.
@@ -312,6 +332,7 @@ public class DiscreteCostAnalysis {
 		double limit = 25.0;
 		if (avgPercentGrade > limit) return 9.0;
 		return 1.0 + 8.0 * Math.pow(avgPercentGrade, 2.0) / Math.pow(limit, 2.0); //can change the power to alter the shape of the curve.
+		*/
 	}
 	
 
