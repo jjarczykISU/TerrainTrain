@@ -130,14 +130,13 @@ public class DiscreteCostAnalysis {
 	    // add all source cells to toEvaluate
 	    for(int i = 0; i < width; i++) {
 	        for(int j = 0; j < height; j++) {
-	        	//status[i][j] = UNKNOWN;
-	            if(roadsLayer[i][j] <= 0) {
+	            if(roadsLayer[i][j] != 255) {
 	                toEvaluate.add(0, i, j);
 	            }
 	        }
 	    }
 	    
-	    double[][] accumulatedCost = new double[width][height];
+	    double[][] cost = new double[width][height];
 	    
 	    while(!toEvaluate.isEmpty()) {
 	    	// get least distance cell from toEvaluate list
@@ -148,15 +147,19 @@ public class DiscreteCostAnalysis {
 	        int y = evalCoor.getSecond();
 	        
 	        // Check that this cell has not been evaluated yet
-	        if(status[x][y] == EVALUATED) continue;
+	        if(status[x][y] == EVALUATED) continue;	        
 	        
-	        // update accumulatedCost
-	        accumulatedCost[x][y] = Math.abs(10 - distance); //TODO don't hard-code ideal distance (10)
+//	        // update accumulatedCost
+//	        accumulatedCost[x][y] = Math.abs(10 - distance); //TODO don't hard-code ideal distance (10)
+
+	        // update cost
+	        double idealMetersFromRoad = 10.0; //TODO don't hard-code ideal distance (10 meters)
+	        cost[x][y] = Math.abs(idealMetersFromRoad - distance); //TODO change this to an equation with range 1 to 9 based off of distance
 	        
 	        // update status of eval to evaluated
 	        status[x][y] = EVALUATED;
 	        
-	        // add neighbor coordinate the accumulated cost of the current cell to toEvalute if that cell does not have the status of 2 yet
+	        // add neighbor coordinate to be evaluated
 	        
 	        // add down
 	        if(y+1 < height && status[x][y+1] != EVALUATED) {
@@ -200,7 +203,7 @@ public class DiscreteCostAnalysis {
 	        }
 	    }
 	    
-		return accumulatedCost;
+		return cost;
 	}
 	
 	/**
